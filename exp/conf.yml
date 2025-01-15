@@ -1,0 +1,26 @@
+data:
+  n_src: 1
+  sample_rate: 32000
+filterbank:
+  stft_kernel_size: 1024
+  stft_n_filters: 1024
+  stft_stride: 256
+main_args:
+  help: null
+masknet:
+  architecture: DCUNet-16
+  fix_length_mode: pad
+  n_src: 1
+optim:
+  lr: 0.0001
+  optimizer: adamw
+  weight_decay: 1.0e-05
+positional arguments: {}
+training:
+  batch_size: 14
+  early_stop: true
+  epochs: 200
+  gradient_clipping: 5
+  half_lr: true
+  limit_train_batches: 10000
+  num_workers: 12

@@ -1,0 +1,25 @@
+asteroid==0.7.0
+asteroid-filterbanks==0.4.0
+ipykernel==6.29.5
+ipympl==0.9.6
+ipython==8.26.0
+ipywidgets==8.1.5
+jupyter==1.0.0
+librosa==0.10.2.post1
+matplotlib==3.9.2
+numpy==1.23.5
+pandas==2.2.3
+pytorch-lightning==2.4.0
+pyroomacoustics==0.8.3
+scikit-learn==1.6.0
+scipy==1.14.1
+soundfile==0.12.1
+schedulefree==1.4
+torch==2.5.1
+torch-optimizer==0.1.0
+torchaudio==2.5.1
+torchmetrics==0.11.4
+tornado==6.4.2
+tqdm==4.67.1
+typing_extensions==4.12.2
+wandas @ git+https://github.com/kasahart/wandas.git@77cdc75d87beb27af9e873efc2aa39023acdedf6

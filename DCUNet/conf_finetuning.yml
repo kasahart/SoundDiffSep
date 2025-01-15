@@ -1,0 +1,28 @@
+# Filterbank config
+filterbank:
+  stft_n_filters: 1024
+  stft_kernel_size: 1024
+  stft_stride: 256
+masknet:
+  architecture: DCUNet-16
+  fix_length_mode: pad
+# Training config
+training:
+  epochs: 200
+  batch_size: 14
+  num_workers: 12
+  half_lr: yes
+  early_stop: yes
+  gradient_clipping: 5
+  limit_train_batches: 10000
+# Optim config
+optim:
+  optimizer: adamw
+  lr: 0.0001
+  weight_decay: !!float 1e-5
+# Data config
+data:
+  sample_rate: 32000
+  n_src: 1
+base:
+  ckpt: exp/DCUNet/checkpoints/epoch=38-step=117000.ckpt
