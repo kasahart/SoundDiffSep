@@ -6,7 +6,10 @@
     "image": "mcr.microsoft.com/devcontainers/python:0-3.10",
     "features": {
         "ghcr.io/devcontainers/features/git:1": {},
-        "ghcr.io/akhildevelops/devcontainer-features/pip:0": {}
+        "ghcr.io/devcontainers/features/nvidia-cuda:1": {
+            "cudaVersion": "12.4"
+        }
+    
     },
     "customizations": {
         "vscode": {
@@ -14,11 +17,16 @@
                 "python.defaultInterpreterPath": "/usr/local/bin/python"
             },
             "extensions": [
-                "ms-python.python"
+                "ms-python.python",
+                "ms-toolsai.jupyter"
             ]
         }
     },
-    "postCreateCommand": "pip install -r requirements.txt"
+    "postCreateCommand": "pip install -r requirements.txt",
     // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
     // "remoteUser": "root",
+    "runArgs": [
+        "--gpus",
+        "all"
+    ]
 }

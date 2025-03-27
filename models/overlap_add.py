@@ -3,7 +3,7 @@ from scipy import signal
 
 class OverlapAdd:
     """
-    重複加算法を使ってマルチチャネル信号をセグメントに分割、バッチとして処理し、再構成するクラス
+    重複加算法を使ってマルチチャネル信号をセグメントに分割、ミニバッチで処理し、再構成するクラス
     
     Args:
         window_size (int): セグメントの窓サイズ
@@ -51,15 +51,16 @@ class OverlapAdd:
             
         return segments
     
-    def process_signal(self, x, processing_func):
+    def process_signal(self, x, processing_func, batch_size=32):
         """
-        マルチチャネル信号を処理する
+        マルチチャネル信号をミニバッチ処理する
         
         Args:
             x (numpy.ndarray): 入力信号、形状は(n_channels, n_samples)
             processing_func (callable): バッチ処理を行う関数。
-                                      (n_segments, n_channels, window_size)の配列を入力とし、
+                                      (batch_size, n_channels, window_size)の配列を入力とし、
                                       同じ形状の処理済み配列を返すこと
+            batch_size (int): ミニバッチのサイズ。メモリ使用量を調整するために使用
             
         Returns:
             numpy.ndarray: 処理された信号、形状は(n_channels, n_samples)
@@ -68,9 +69,22 @@ class OverlapAdd:
         
         # 信号をセグメントに分割 -> (n_segments, n_channels, window_size)
         segments = self.segment_signal(x)
+        n_segments = segments.shape[0]
         
-        # すべてのセグメントをバッチとして一度に処理
-        processed_segments = processing_func(segments)
+        # 全セグメントに対して、ミニバッチ処理を行う
+        processed_segments = np.zeros_like(segments)
+        
+        # ミニバッチ処理
+        for i in range(0, n_segments, batch_size):
+            # バッチサイズを考慮して終了インデックスを決める
+            end_idx = min(i + batch_size, n_segments)
+            
+            # バッチ処理
+            batch = segments[i:end_idx]
+            processed_batch = processing_func(batch)
+            
+            # 結果を保存
+            processed_segments[i:end_idx] = processed_batch
         
         # 窓関数を適用 (各チャネルの各セグメントに)
         if self.use_window:
