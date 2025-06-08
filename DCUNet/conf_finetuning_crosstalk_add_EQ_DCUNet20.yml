@@ -1,0 +1,32 @@
+# Filterbank config
+filterbank:
+  stft_n_filters: 1024
+  stft_kernel_size: 1024
+  stft_stride: 256
+masknet:
+  architecture: DCUNet-20
+  fix_length_mode: trim
+# Training config
+training:
+  epochs: 200
+  batch_size: 7
+  num_workers: 24
+  early_stop: yes
+  gradient_clipping: 5
+  limit_train_batches: 5000
+  augmentation_p: 0.2
+  segment: 3
+# Optim config
+optim:
+  # optimizer: adamw
+  lr: 0.001
+  # weight_decay: !!float 1e-5
+# Data config
+data:
+  sample_rate: 32000
+  n_src: 1
+# base:
+#   ckpt: exp/Large-DCUNet-20_TwoNoise_ClossTalk_add_EQ2/checkpoints/epoch=32-step=330000.ckpt
+
+
+
