@@ -9,7 +9,6 @@
         "ghcr.io/devcontainers/features/nvidia-cuda:1": {
             "cudaVersion": "12.4"
         }
-    
     },
     "customizations": {
         "vscode": {
@@ -22,7 +21,7 @@
             ]
         }
     },
-    "postCreateCommand": "pip install -r requirements.txt",
+    "postCreateCommand": "pip install git+https://github.com/endolith/waveform-analysis.git@master && pip install -r requirements.txt",
     // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
     // "remoteUser": "root",
     "runArgs": [

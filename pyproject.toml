@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sounddiffsep"
+dynamic = ["version"]
+description = "Sound source separation using diffusion models"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Your Name", email = "your.email@example.com"},
+]
+keywords = ["audio", "source separation", "diffusion", "machine learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+]
+dependencies = [
+    "torch>=1.12.0",
+    "torchaudio>=0.12.0",
+    "numpy>=1.21.0",
+    "librosa>=0.9.0",
+    "soundfile>=0.10.0",
+    "matplotlib>=3.5.0",
+    "tqdm>=4.64.0",
+    "pyyaml>=6.0",
+    "tensorboard>=2.9.0",
+    "loralib"
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=3.0",
+    "black>=22.0",
+    "flake8>=4.0",
+    "isort>=5.10",
+    "mypy>=0.950",
+]
+cuda = [
+    "torch[cuda]",
+    "torchaudio[cuda]",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/SoundDiffSep"
+Repository = "https://github.com/yourusername/SoundDiffSep"
+Issues = "https://github.com/yourusername/SoundDiffSep/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["sounddiffsep*"]
+
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+
+[tool.isort]
+profile = "black"
+line_length = 88
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
