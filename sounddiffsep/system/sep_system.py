@@ -4,6 +4,29 @@ from schedulefree import RAdamScheduleFree
 
 
 class TwoChSepSystem(System):
+    def __init__(
+        self,
+        model,
+        optimizer,
+        loss_func,
+        train_loader,
+        val_loader=None,
+        scheduler=None,
+        config=None,
+        lr=1e-4,
+    ):
+        super().__init__(
+            model=model,
+            optimizer=optimizer,
+            loss_func=loss_func,
+            train_loader=train_loader,
+            val_loader=val_loader,
+            scheduler=scheduler,
+            config=config,
+        )
+        self.lr = lr
+
+
     def common_step(self, batch, batch_nb, train=True):
         """Common forward step between training and validation.
 
@@ -48,7 +71,7 @@ class TwoChSepSystem(System):
 
     def configure_optimizers(self):
         # schedule-freeなoptimizerを例としてAdamWScheduleFreeを使用
-        optimizer = RAdamScheduleFree(self.parameters(), lr=1e-4, betas=(0.9, 0.999))
+        optimizer = RAdamScheduleFree(self.parameters(), lr=self.lr, betas=(0.9, 0.999))
         return optimizer
 
     # 以下フックでoptimizerのモードを適切に切り替える
