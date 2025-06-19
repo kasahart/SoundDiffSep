@@ -1,8 +1,8 @@
-# AudioSetMixCrosstalkTwoNoiseEQ データ作成手順
+# AudioMixCrosstalkTwoNoiseEQ データ作成手順
 
 ## 概要
 
-`AudioSetMixCrosstalkTwoNoiseEQ`は音声データセットクラスで、以下の特徴を持つデータを生成します：
+`AudioMixCrosstalkTwoNoiseEQ`は音声データセットクラスで、以下の特徴を持つデータを生成します：
 
 - **ターゲット音声**: RIR（Room Impulse Response）を適用してクロストークを模擬
 - **ノイズ**: 2つの異なるノイズ音声にそれぞれ異なるRIRを適用
@@ -12,10 +12,8 @@
 ## クラス階層
 
 ```text
-AudioSetMix (基底クラス)
-└── AudioSetMixTwoNoise (2つのノイズ対応)
-    └── AudioSetMixCrosstalkTwoNoise (ターゲットにRIR適用)
-        └── AudioSetMixCrosstalkTwoNoiseEQ (EQ処理追加)
+torch.utils.data.Dataset
+└── AudioMixCrosstalkTwoNoiseEQ (独立実装)
 ```
 
 ## データ作成の詳細手順
@@ -23,9 +21,11 @@ AudioSetMix (基底クラス)
 ### 1. 初期化パラメータ
 
 ```python
-def __init__(self, dset="", sr=32000, test_snr=-5, p=1.0, segment=10):
+def __init__(self, audio_dir, rir_dir, dset="train", sr=32000, test_snr=-5, p=1.0, segment=10):
 ```
 
+- `audio_dir`: 音声ファイルが格納されているディレクトリパス
+- `rir_dir`: RIRファイルが格納されているディレクトリパス
 - `dset`: "train" または "eval"
 - `sr`: サンプリングレート（32kHz）
 - `test_snr`: 評価時のSNR値
@@ -56,19 +56,33 @@ self.eq = BandStopFilter(
 1. **ターゲット音声の選択**
 
    ```python
-   tgt_name = self.data_names[idx]
+   target_name = self.audio_names[idx]
    ```
 
 2. **ノイズ音声の選択（2つ）**
 
    ```python
-   noise_name1, rir_name1 = self.get_noise_and_rir_names(idx, tgt_name, second=False)
-   noise_name2, rir_name2 = self.get_noise_and_rir_names(idx, tgt_name, second=True)
+   # 訓練時はランダム選択
+   noise_name1 = self._choose_different_noise(target_name)
+   noise_name2 = self._choose_different_noise(target_name)
+   
+   # 評価時は固定設定を使用
+   noise_name1 = self.noise_names_1[idx]
+   noise_name2 = self.noise_names_2[idx]
    ```
 
-3. **ターゲット用RIRの選択**
-   - 訓練時: ランダム選択
-   - 評価時: 固定パターン
+3. **RIRの選択**
+   ```python
+   # 訓練時: ランダム選択
+   rir_name1 = random.choice(self.rir_names)
+   rir_name2 = random.choice(self.rir_names)
+   rir_name_tgt = random.choice(self.rir_names)
+   
+   # 評価時: 固定パターン
+   rir_name1 = self.rir_names_1[idx]
+   rir_name2 = self.rir_names_2[idx]
+   rir_name_tgt = self.rir_names_tgt[idx]
+   ```
 
 #### 3.2 SNR設定
 
@@ -83,24 +97,24 @@ self.eq = BandStopFilter(
 #### 3.3 音声データの読み込み
 
 ```python
-tgt_raw = self.load_audio(tgt_name)        # ターゲット音声
-noise_clean1 = self.load_audio(noise_name1) # ノイズ1
-noise_clean2 = self.load_audio(noise_name2) # ノイズ2
+target_raw = self.load_audio(target_name)        # ターゲット音声
+noise_clean1 = self.load_audio(noise_name1)     # ノイズ1
+noise_clean2 = self.load_audio(noise_name2)     # ノイズ2
 ```
 
 #### 3.4 RIRの適用
 
 ```python
-tgt_reverb = self.apply_rir_to_noise(tgt_raw, rir_tgt)      # ターゲットにRIR適用
-noise1_reverb = self.apply_rir_to_noise(noise_clean1, rir1) # ノイズ1にRIR適用
-noise2_reverb = self.apply_rir_to_noise(noise_clean2, rir2) # ノイズ2にRIR適用
+target_reverb = self.apply_rir(target_raw, rir_target)  # ターゲットにRIR適用
+noise1_reverb = self.apply_rir(noise_clean1, rir1)     # ノイズ1にRIR適用
+noise2_reverb = self.apply_rir(noise_clean2, rir2)     # ノイズ2にRIR適用
 ```
 
 #### 3.5 ノイズの合成
 
 ```python
-noise_reverb = noise1_reverb + noise2_reverb  # リバーブ後のノイズ2つを合算
-noise_clean = noise_clean1 + noise_clean2     # リバーブ前のノイズ2つを合算
+noise_reverb_combined = noise1_reverb + noise2_reverb  # リバーブ後のノイズ2つを合算
+noise_clean_combined = noise_clean1 + noise_clean2     # リバーブ前のノイズ2つを合算
 ```
 
 #### 3.6 音声の混合
@@ -108,13 +122,13 @@ noise_clean = noise_clean1 + noise_clean2     # リバーブ前のノイズ2つ�
 1. **ターゲット + ノイズの混合**
 
    ```python
-   tgt_mixed = self.mix_audio(tgt_raw, noise_reverb, snr)
+   target_mixed = self.mix_audio(target_raw, noise_reverb_combined, main_snr)
    ```
 
 2. **ノイズ + ターゲットの混合**
 
    ```python
-   noise_mixed = self.mix_audio(noise_clean, tgt_reverb, noise_mix_snr)
+   noise_mixed = self.mix_audio(noise_clean_combined, target_reverb, noise_mix_snr)
    ```
 
 #### 3.7 EQ処理の適用
@@ -122,7 +136,7 @@ noise_clean = noise_clean1 + noise_clean2     # リバーブ前のノイズ2つ�
 訓練時のみ、ノイズ混合音声にバンドストップフィルタを適用：
 
 ```python
-if self.dset == "train":
+if self.dset == "train" and self.eq is not None:
     noise_mixed = torch.tensor(
         self.eq(noise_mixed.numpy(), sample_rate=self.sr)
     )
@@ -131,8 +145,8 @@ if self.dset == "train":
 #### 3.8 正規化
 
 ```python
-tgt_final, noise_final, mixed_final = self.normalize_audio(
-    tgt_raw, noise_mixed, tgt_mixed
+target_final, noise_final, mixed_final = self.normalize_audio(
+    target_raw, noise_mixed, target_mixed
 )
 ```
 
@@ -144,32 +158,35 @@ tgt_final, noise_final, mixed_final = self.normalize_audio(
 
 1. **mixed_final**: メイン混合音声（リバーブ前ターゲット + リバーブ後2ノイズ合成）
 2. **noise_final**: ノイズ混合音声（リバーブ前2ノイズ合成 + リバーブ後ターゲット + EQ処理）
-3. **tgt_final**: クリーンターゲット音声（リバーブ前）
+3. **target_final**: クリーンターゲット音声（リバーブ前）
 
 ## データパスの設定
 
 ### 必要なディレクトリ構造
 
 ```text
-/workspaces/2chssDNN/data/
-├── audioset/
-│   ├── train.pkl  # 訓練データのメタ情報
-│   └── eval.pkl   # 評価データのメタ情報
-└── RVAE-EM-rirs/
-    ├── train/     # 訓練用RIRファイル (.wav)
-    └── test/      # 評価用RIRファイル (.wav)
+/workspaces/SoundDiffSep/data/
+├── audio/         # 音声ファイル (.wav, .mp3, .flac)
+└── rir/           # RIRファイル (.wav)
 ```
 
-### 音声ファイルパス
+### 音声ファイル
 
-- AudioSetの音声ファイルパスは`train.pkl`/`eval.pkl`に記録
-- パス内の"clapsep-only-audio"は"2chssDNN"に置換される
+- 音声ファイルは`audio_dir`で指定されたディレクトリから再帰的に検索
+- 対応フォーマット: `.wav`, `.mp3`, `.flac`
+
+### RIRファイル
+
+- RIRファイルは`rir_dir`で指定されたディレクトリから再帰的に検索
+- 対応フォーマット: `.wav`
 
 ## 使用例
 
 ```python
 # 訓練用データセット
-train_dataset = AudioSetMixCrosstalkTwoNoiseEQ(
+train_dataset = AudioMixCrosstalkTwoNoiseEQ(
+    audio_dir="/workspaces/SoundDiffSep/data/audio",
+    rir_dir="/workspaces/SoundDiffSep/data/rir",
     dset="train", 
     sr=32000, 
     test_snr=-10, 
@@ -178,7 +195,9 @@ train_dataset = AudioSetMixCrosstalkTwoNoiseEQ(
 )
 
 # 評価用データセット
-eval_dataset = AudioSetMixCrosstalkTwoNoiseEQ(
+eval_dataset = AudioMixCrosstalkTwoNoiseEQ(
+    audio_dir="/workspaces/SoundDiffSep/data/audio",
+    rir_dir="/workspaces/SoundDiffSep/data/rir",
     dset="eval", 
     sr=32000, 
     test_snr=-10, 

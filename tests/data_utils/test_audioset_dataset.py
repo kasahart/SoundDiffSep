@@ -7,7 +7,7 @@ import os
 import numpy as np
 import torch
 import soundfile as sf
-from sounddiffsep.data_utils.audioset_dataset import AudioSetMixCrosstalkTwoNoiseEQ
+from sounddiffsep.data_utils.mix_dataset import AudioMixCrosstalkTwoNoiseEQ
 
 
 def create_test_audio_files():
@@ -46,7 +46,7 @@ def test_dataset_basic():
     
 
     # データセット作成
-    dataset = AudioSetMixCrosstalkTwoNoiseEQ(
+    dataset = AudioMixCrosstalkTwoNoiseEQ(
         audio_dir=test_dir,
         rir_dir=test_dir,  # 同じディレクトリをRIRとしても使用
         dset="train",
@@ -85,7 +85,7 @@ def test_eval_mode():
     
         
         # 評価モードでデータセット作成
-    dataset = AudioSetMixCrosstalkTwoNoiseEQ(
+    dataset = AudioMixCrosstalkTwoNoiseEQ(
         audio_dir=test_dir,
         rir_dir=test_dir,
         dset="eval",
@@ -121,7 +121,7 @@ def test_different_parameters():
 
     # 異なるセグメント長でテスト
     for segment in [0.5, 1.0, 2.0]:
-        dataset = AudioSetMixCrosstalkTwoNoiseEQ(
+        dataset = AudioMixCrosstalkTwoNoiseEQ(
             audio_dir=test_dir,
             rir_dir=test_dir,
             dset="train",
