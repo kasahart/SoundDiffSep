@@ -172,6 +172,5 @@ cython_debug/
 
 *.Identifier
 
-*.ckpt
 data/
 exp/

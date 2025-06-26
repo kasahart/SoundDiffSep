@@ -1,0 +1,6 @@
+model:
+    model_type: ResUNet30_Unconditional
+    input_channels: 2    
+    output_channels: 1   
+
+
