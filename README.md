@@ -4,23 +4,14 @@ Sound Source Separation Method Based on Sound Pressure Difference
 
 ## 概要
 
-SoundDiffSepは、分散配置された2本のマイクロフォンの音圧差を利用した音源分離手法です。一方のマイクに近い音源を強調し、他の音源や雑音を抑制することで、高品質な音声分離を実現します。
+SoundDiffSepは、分散配置された2本のマイクロフォンの音圧差を利用した音源分離手法です。一方のマイクに近い音源を強調し、他の音源や雑音を抑制することで、高品質な音源強調を実現します。
 
 ## 特徴
 
 - **マルチマイク音源分離**: 分散配置された2本のマイクロフォンを使用
-- **空間的位置関係の活用**: マイクと音源の距離の差を利用した分離手法
+- **空間的位置関係の活用**: マイクと音源の距離の差による音圧差を利用した音源強調手法
 - **深層学習モデル**: ResUNet、DCUNetなど複数のアーキテクチャをサポート
 - **OverlapAdd処理**: 長時間音声の効率的な処理
-
-## アプローチ
-
-### 基本原理
-
-1. **2チャンネル入力**: 分散配置された2本のマイクからの音声信号
-2. **空間的フィルタリング**: マイクと音源の距離関係を利用
-3. **深層学習処理**: 混合信号から目的音源を推定
-4. **音圧差活用**: 近距離音源の強調と遠距離音源の抑制
 
 ### 対象音源
 
@@ -168,19 +159,19 @@ for model_type in ["DCUNet-16", "DCUNet-20", "Large-DCUNet-20", "resunet"]:
 ![clean_mic1](fig/clean_mic1.png)
 
 <audio controls>
-  <source src="data/result/tgt.wav" type="audio/wav">
+  <source src="audio/tgt.wav" type="audio/wav">
 </audio>
 
 ![mixed_mic1](fig/mixed_mic1.png)
 
 <audio controls>
-  <source src="data/result/mix.wav" type="audio/wav">
+  <source src="audio/mix.wav" type="audio/wav">
 </audio>
 
 ![est_tgt](fig/est_tgt.png)
 
 <audio controls>
-  <source src="data/result/est_tgt.wav" type="audio/wav">
+  <source src="audio/est_tgt.wav" type="audio/wav">
 </audio>
 
 ## ファインチューニング
