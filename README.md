@@ -17,6 +17,7 @@ SoundDiffSepは、分散配置された2本のマイクロフォンの音圧差�
 
 - 片方のマイクに近い音源を**ターゲット**として強調
 - 遠方の音源を**ノイズ**として抑制
+- 音源の種類（話者、楽器、環境音など）は問わず、**ユニバーサルサウンドセパレーション**に対応
 
 ## インストール
 
@@ -156,23 +157,20 @@ for model_type in ["DCUNet-16", "DCUNet-20", "Large-DCUNet-20", "resunet"]:
 
 #### ResUnetの音源強調例
 
+**ターゲット音源（クリーンな音源）:**
 ![clean_mic1](fig/clean_mic1.png)
 
-<audio controls>
-  <source src="audio/tgt.wav" type="audio/wav">
-</audio>
+[🔊 tgt.wav を再生](audio/tgt.wav)
 
+**混合音源（ノイズ混入）:**
 ![mixed_mic1](fig/mixed_mic1.png)
 
-<audio controls>
-  <source src="audio/mix.wav" type="audio/wav">
-</audio>
+[🔊 mix.wav を再生](audio/mix.wav)
 
+**分離された音源（推定結果）:**
 ![est_tgt](fig/est_tgt.png)
 
-<audio controls>
-  <source src="audio/est_tgt.wav" type="audio/wav">
-</audio>
+[🔊 est_tgt.wav を再生](audio/est_tgt.wav)
 
 ## ファインチューニング
 
