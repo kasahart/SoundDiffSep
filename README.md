@@ -160,17 +160,17 @@ for model_type in ["DCUNet-16", "DCUNet-20", "Large-DCUNet-20", "resunet"]:
 **ターゲット音源（クリーンな音源）:**
 ![clean_mic1](fig/clean_mic1.png)
 
-[🔊 tgt.wav を再生](audio/tgt.wav)
+[🔊 tgt.wav](audio/tgt.wav)
 
 **混合音源（ノイズ混入）:**
 ![mixed_mic1](fig/mixed_mic1.png)
 
-[🔊 mix.wav を再生](audio/mix.wav)
+[🔊 mix.wav](audio/mix.wav)
 
 **分離された音源（推定結果）:**
 ![est_tgt](fig/est_tgt.png)
 
-[🔊 est_tgt.wav を再生](audio/est_tgt.wav)
+[🔊 est_tgt.wav](audio/est_tgt.wav)
 
 ## ファインチューニング
 
