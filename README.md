@@ -136,9 +136,9 @@ for position, signal in zip(source_positions, source_signals):
 
 - **ResUNet**: 残差接続を持つU-Net構造
 - **DCUNet**: Deep Complex U-Net
-- **DCUNet-16**: 軽量版DCUNet（16チャンネル）
-- **DCUNet-20**: 標準DCUNet（20チャンネル）
-- **Large-DCUNet-20**: 大規模DCUNet
+- **DCUNet-16**: 軽量版DCUNet（16層）
+- **DCUNet-20**: 標準DCUNet（20層）
+- **Large-DCUNet-20**: 大規模DCUNet（20層）
 
 #### モデル読み込み例
 
