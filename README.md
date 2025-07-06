@@ -152,7 +152,6 @@ for model_type in ["DCUNet-16", "DCUNet-20", "Large-DCUNet-20", "resunet"]:
 #### モデル比較実験
 
 複数のアーキテクチャ性能の簡易比較評価：
-
 ![alt text](fig/image.png)
 
 #### ResUnetの音源強調例
