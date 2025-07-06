@@ -82,9 +82,14 @@ def process_long_audio(mixed, noise_clean, model, batch_size=32):
     pass
 ```
 
-## 音響環境シミュレーション
+## 簡易実験・評価
 
-### PyRoomAcousticsによる室内音響
+### ノートブック
+
+- [`notebook/inference_test_ola.ipynb`](notebook/inference_test_ola.ipynb): OverlapAdd処理による推論テスト
+- [`notebook/audio_separation_model_comparison.ipynb`](notebook/audio_separation_model_comparison.ipynb): 複数モデルの性能比較
+
+### PyRoomAcousticsによる室内音響シミュレーション
 
 本プロジェクトでは、現実的な音響環境での性能評価のため、PyRoomAcousticsを使用した室内音響シミュレーションを行います：
 
@@ -115,12 +120,9 @@ for position, signal in zip(source_positions, source_signals):
     room.add_source(position, signal=signal)
 ```
 
-## 実験・評価
+![alt text](fig/room.png)
 
-### ノートブック
-
-- [`notebook/inference_test_ola.ipynb`](notebook/inference_test_ola.ipynb): OverlapAdd処理による推論テスト
-- [`notebook/audio_separation_model_comparison.ipynb`](notebook/audio_separation_model_comparison.ipynb): 複数モデルの性能比較
+[2.0, 2.0]に配置されたマイクの収録音から[3,3]に配置された音源を強調します。
 
 ### 評価指標
 
