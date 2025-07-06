@@ -1,0 +1,37 @@
+# Filterbank config
+filterbank:
+  stft_n_filters: 1024
+  stft_kernel_size: 1024
+  stft_stride: 256
+masknet:
+  architecture: Large-DCUNet-20
+  fix_length_mode: trim
+# Training config
+training:
+  epochs: 5
+  batch_size: 7
+  num_workers: 12
+  early_stop: yes
+  gradient_clipping: 5
+  limit_train_batches: 5000
+  augmentation_p: 0.8
+  segment: 3
+# Optim config
+optim:
+  # optimizer: adamw
+  lr: 0.0001
+
+# Data config
+data:
+  train:
+    audio_dir: data/audio
+    rir_dir: data/rir
+  valid:
+    audio_dir: data/audio
+    rir_dir: data/rir
+  sample_rate: 32000
+  n_src: 1
+base:
+  ckpt: exp/checkpoints/Large-DCUNet-20_TwoNoise_CrossTalk_add_EQ2/epoch=25-step=130000.ckpt
+
+

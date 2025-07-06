@@ -174,3 +174,5 @@ cython_debug/
 
 data/
 exp/
+tests/
+test*.py
