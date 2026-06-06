@@ -1,27 +1,29 @@
 # SoundDiffSep
 
+English | [日本語](README.ja.md)
+
 Sound Source Separation Method Based on Sound Pressure Difference
 
-## 概要
+## Overview
 
-SoundDiffSepは、分散配置された2本のマイクロフォンの音圧差を利用した音源分離手法です。一方のマイクに近い音源を強調し、他の音源や雑音を抑制することで、高品質な音源強調を実現します。
+SoundDiffSep is a sound source separation method that uses the sound pressure difference between two distributed microphones. It enhances the sound source located near one microphone while suppressing other sources and noise, enabling high-quality source enhancement.
 
-## 特徴
+## Features
 
-- **マルチマイク音源分離**: 分散配置された2本のマイクロフォンを使用
-- **空間的位置関係の活用**: マイクと音源の距離の差による音圧差を利用した音源強調手法
-- **深層学習モデル**: ResUNet、DCUNetなど複数のアーキテクチャをサポート
-- **OverlapAdd処理**: 長時間音声の効率的な処理
+- **Multi-microphone source separation**: Uses two distributed microphones
+- **Use of spatial relationships**: Enhances sources by leveraging sound pressure differences caused by distance differences between microphones and sound sources
+- **Deep learning models**: Supports multiple architectures, including ResUNet and DCUNet
+- **OverlapAdd processing**: Efficient processing for long audio recordings
 
-### 対象音源
+### Target Sources
 
-- 片方のマイクに近い音源を**ターゲット**として強調
-- 遠方の音源を**ノイズ**として抑制
-- 音源の種類（話者、楽器、環境音など）は問わず、**ユニバーサルサウンドセパレーション**に対応
+- Enhances the source close to one microphone as the **target**
+- Suppresses distant sources as **noise**
+- Supports **universal sound separation** regardless of source type, such as speakers, instruments, or environmental sounds
 
-## インストール
+## Installation
 
-### 通常のインストール
+### Standard Installation
 
 ```bash
 git clone https://github.com/your-username/SoundDiffSep.git
@@ -30,29 +32,29 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-### Dev Container（デブコンテナ）での環境構築
+### Setting Up with a Dev Container
 
-1. [Dev Containers 拡張機能](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)をインストールしたVS Codeを用意します。
-2. リポジトリをクローンし、VS Codeで開きます。
-3. コマンドパレット（`F1` または `Ctrl+Shift+P`）で「Dev Containers: Reopen in Container」を選択します。
-4. 自動的に依存関係がインストールされ、開発環境がセットアップされます。
+1. Prepare VS Code with the [Dev Containers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) installed.
+2. Clone the repository and open it in VS Code.
+3. Open the command palette (`F1` or `Ctrl+Shift+P`) and select “Dev Containers: Reopen in Container”.
+4. Dependencies are installed automatically and the development environment is set up.
 
-> **備考:**  
-> `.devcontainer` ディレクトリと `devcontainer.json` がプロジェクトに含まれている場合、その設定が利用されます。  
-> 詳細は [Dev Containers ドキュメント](https://containers.dev/) を参照してください。
+> **Note:**
+> If the project includes a `.devcontainer` directory and `devcontainer.json`, those settings are used.
+> For details, see the [Dev Containers documentation](https://containers.dev/).
 
-## 使用方法
+## Usage
 
-### 基本的な音声分離
+### Basic Audio Separation
 
 ```python
 from sounddiffsep.model_loader import easy_load_model, separate_audio
 import numpy as np
 
-# モデルの読み込み
+# Load the model
 model = easy_load_model("resunet", device="cuda")
 
-# 2チャンネル音声データ（mixed_signal: メインマイク, noise_signal: 参照マイク）
+# Two-channel audio data (mixed_signal: main microphone, noise_signal: reference microphone)
 result = separate_audio(
     mixed_signal=mixed_signal,  # shape: (samples,)
     noise_signal=noise_signal,   # shape: (samples,)
@@ -60,61 +62,61 @@ result = separate_audio(
     device="cuda"
 )
 
-# 結果の取得
-estimated_target = result["estimated_target"]  # 強調された音源
-estimated_noise = result["estimated_noise"]    # 抑制されたノイズ
+# Retrieve the results
+estimated_target = result["estimated_target"]  # enhanced source
+estimated_noise = result["estimated_noise"]    # suppressed noise
 ```
 
-### OverlapAdd処理による長時間音声の処理
+### Processing Long Audio with OverlapAdd
 
 ```python
 from sounddiffsep.models.overlap_add import OverlapAdd
 
-# OverlapAdd設定
-window_size = 64000  # 2秒分のサンプル数（32kHz）
+# OverlapAdd settings
+window_size = 64000  # number of samples for 2 seconds (32 kHz)
 hop_size = window_size // 2
 ola = OverlapAdd(window_size=window_size, hop_size=hop_size, window='hann')
 
-# 長時間音声の効率的な処理
+# Efficient processing for long audio
 def process_long_audio(mixed, noise_clean, model, batch_size=32):
-    """長時間音声をセグメント単位で処理"""
-    # 詳細な実装は notebook/inference_test_ola.ipynb を参照
+    """Process long audio segment by segment"""
+    # See notebook/inference_test_ola.ipynb for a detailed implementation
     pass
 ```
 
-## 簡易実験・評価
+## Quick Experiments and Evaluation
 
-### ノートブック
+### Notebooks
 
-- [`notebook/inference_test_ola.ipynb`](notebook/inference_test_ola.ipynb): OverlapAdd処理による推論テスト
-- [`notebook/audio_separation_model_comparison.ipynb`](notebook/audio_separation_model_comparison.ipynb): 複数モデルの性能比較
+- [`notebook/inference_test_ola.ipynb`](notebook/inference_test_ola.ipynb): Inference test using OverlapAdd processing
+- [`notebook/audio_separation_model_comparison.ipynb`](notebook/audio_separation_model_comparison.ipynb): Performance comparison across multiple models
 
-### PyRoomAcousticsによる室内音響シミュレーション
+### Room Acoustics Simulation with PyRoomAcoustics
 
-本プロジェクトでは、現実的な音響環境での性能評価のため、PyRoomAcousticsを使用した室内音響シミュレーションを行います：
+This project uses room acoustics simulations with PyRoomAcoustics to evaluate performance in realistic acoustic environments:
 
-- **部屋設定**: 8m×8m、吸収率0.4、散乱率0.1
-- **マイク配置**: 2チャンネル分散配置（[2,2]と[5,5]の位置）
-- **音源配置**: ターゲット音源とノイズ音源を異なる位置に配置
-- **反響**: 最大12次まで反射を考慮
+- **Room settings**: 8 m × 8 m, absorption coefficient 0.4, scattering coefficient 0.1
+- **Microphone placement**: Two-channel distributed placement (positions [2,2] and [5,5])
+- **Source placement**: Target and noise sources are placed at different positions
+- **Reflections**: Reflections are considered up to the 12th order
 
 ```python
 import pyroomacoustics as pra
 
-# 8m×8mの部屋を作成
+# Create an 8 m × 8 m room
 corners = np.array([[0, 0], [8, 0], [8, 8], [0, 8]]).T
 room = pra.Room.from_corners(
     corners=corners,
     fs=32000,
-    materials=pra.Material(0.4, 0.1),  # 吸収率、散乱率
+    materials=pra.Material(0.4, 0.1),  # absorption coefficient, scattering coefficient
     max_order=12
 )
 
-# マイクを配置 - 分散配置された2本のマイクロフォン
+# Place microphones - two distributed microphones
 mic_positions = np.array([[2.0, 2.0], [5.0, 5.0]]).T
 room.add_microphone_array(mic_positions)
 
-# 音源を配置
+# Place sources
 source_positions = [[3.0, 3.0], [6.0, 6.0], [4.0, 4.0]]
 for position, signal in zip(source_positions, source_signals):
     room.add_source(position, signal=signal)
@@ -122,112 +124,112 @@ for position, signal in zip(source_positions, source_signals):
 
 ![alt text](fig/room.png)
 
-[2.0, 2.0]に配置されたマイクの収録音から[3,3]に配置された音源を強調します。
+The source placed at [3,3] is enhanced from the recording captured by the microphone placed at [2.0, 2.0].
 
-### 評価指標
+### Evaluation Metrics
 
-- **SDR (Signal-to-Distortion Ratio)**: 信号対歪み比
-- **SDRi (SDR improvement)**: SDR改善量
-- **処理時間**: リアルタイム性能の評価
+- **SDR (Signal-to-Distortion Ratio)**: Signal-to-distortion ratio
+- **SDRi (SDR improvement)**: Amount of SDR improvement
+- **Processing time**: Evaluation of real-time performance
 
-### モデルアーキテクチャ
+### Model Architectures
 
-#### サポートモデル
+#### Supported Models
 
-- **ResUNet**: 残差接続を持つU-Net構造
+- **ResUNet**: U-Net structure with residual connections
 - **DCUNet**: Deep Complex U-Net
-- **DCUNet-16**: 軽量版DCUNet（16層）
-- **DCUNet-20**: 標準DCUNet（20層）
-- **Large-DCUNet-20**: 大規模DCUNet（20層）
+- **DCUNet-16**: Lightweight DCUNet (16 layers)
+- **DCUNet-20**: Standard DCUNet (20 layers)
+- **Large-DCUNet-20**: Large-scale DCUNet (20 layers)
 
-#### モデル読み込み例
+#### Model Loading Example
 
 ```python
 from sounddiffsep.model_loader import easy_load_model
 
-# 利用可能なモデル
+# Available models
 models = {}
 for model_type in ["DCUNet-16", "DCUNet-20", "Large-DCUNet-20", "resunet"]:
     models[model_type] = easy_load_model(model_type, device="cuda")
 ```
 
-#### モデル比較実験
+#### Model Comparison Experiment
 
-複数のアーキテクチャ性能の簡易比較評価：
+Simple comparative evaluation of performance across multiple architectures:
 ![alt text](fig/image.png)
 
-#### ResUnetの音源強調例
+#### ResUNet Source Enhancement Example
 
-**ターゲット音源（クリーンな音源）:**
+**Target source (clean source):**
 ![clean_mic1](fig/clean_mic1.png)
 
 [🔊 tgt.wav](audio/tgt.wav)
 
-**混合音源（ノイズ混入）:**
+**Mixed source (with noise):**
 ![mixed_mic1](fig/mixed_mic1.png)
 
 [🔊 mix.wav](audio/mix.wav)
 
-**分離された音源（推定結果）:**
+**Separated source (estimated result):**
 ![est_tgt](fig/est_tgt.png)
 
 [🔊 est_tgt.wav](audio/est_tgt.wav)
 
-## ファインチューニング
+## Fine-tuning
 
 ```python
 from sounddiffsep.finetuning import main
 
-# 設定ファイルによるファインチューニング実行
+# Run fine-tuning with a configuration file
 config = {
     "data": {"sample_rate": 32000, "n_src": 2},
     "training": {"batch_size": 16, "num_workers": 4},
     "optim": {"lr": 1e-4},
-    # 詳細設定...
+    # Additional settings...
 }
 
 main(config)
 ```
 
-## ディレクトリ構造
+## Directory Structure
 
 ```text
 
 SoundDiffSep/
-├── sounddiffsep/                  # メインライブラリ
-│   ├── data_utils/                # データセット関連
-│   ├── models/                    # モデル定義
-│   └── model_loader.py            # モデル読み込み
-├── notebook/                      # 実験ノートブック
+├── sounddiffsep/                  # main library
+│   ├── data_utils/                # dataset-related utilities
+│   ├── models/                    # model definitions
+│   └── model_loader.py            # model loading
+├── notebook/                      # experiment notebooks
 │   ├── inference_test_ola.ipynb
 │   └── audio_separation_model_comparison.ipynb
-└── data/                          # 音声データ
-    ├── target.flac                # ターゲット音源
-    ├── noise1.flac                # ノイズ音源1
-    └── noise2.flac                # ノイズ音源2
+└── data/                          # audio data
+    ├── target.flac                # target source
+    ├── noise1.flac                # noise source 1
+    └── noise2.flac                # noise source 2
 
 ```
 
-## 謝辞
+## Acknowledgements
 
-本プロジェクトは以下のオープンソースプロジェクトを基盤として開発されています：
+This project is built on the following open-source projects:
 
-- **[Asteroid](https://github.com/asteroid-team/asteroid/)**: 音声分離フレームワークとして利用。DCUNetなどのモデル実装とトレーニングパイプラインの基盤として使用
-- **[AudioSep](https://github.com/Audio-AGI/AudioSep)**: ResUNetモデルの実装を利用。本プロジェクトではこれらの事前学習済みモデルをファインチューニングして使用
+- **[Asteroid](https://github.com/asteroid-team/asteroid/)**: Used as a speech separation framework. It serves as the foundation for model implementations such as DCUNet and for the training pipeline
+- **[AudioSep](https://github.com/Audio-AGI/AudioSep)**: Uses the ResUNet model implementation. In this project, these pretrained models are fine-tuned and used
 
-これらの優れたライブラリとモデル実装の提供に深く感謝いたします。
+We deeply appreciate the excellent libraries and model implementations provided by these projects.
 
-## ライセンス
+## License
 
-このプロジェクトは[LICENSE](LICENSE)ファイルに記載されたライセンスの下で公開されています。
+This project is released under the license described in the [LICENSE](LICENSE) file.
 
-## 貢献
+## Contributing
 
-プルリクエストやイシューの報告を歓迎します。詳細な貢献ガイドラインについては、プロジェクトのガイドラインを参照してください。
+Pull requests and issue reports are welcome. For detailed contribution guidelines, please refer to the project guidelines.
 
-## 引用
+## Citation
 
-この研究を使用する場合は、以下の形式で引用してください：
+If you use this research, please cite it in the following format:
 
 ```bibtex
 @misc{sounddiffsep2025,
