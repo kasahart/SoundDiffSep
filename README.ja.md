@@ -43,6 +43,12 @@ pip install -e .
 > `.devcontainer` ディレクトリと `devcontainer.json` がプロジェクトに含まれている場合、その設定が利用されます。
 > 詳細は [Dev Containers ドキュメント](https://containers.dev/) を参照してください。
 
+### モデルチェックポイント
+
+モデルチェックポイントファイル（`*.ckpt`）は Git / Git LFS では管理しません。[Google Drive](https://drive.google.com/drive/folders/12w0h0uoFzvY5XtnSYQktm6f19UUnjuTc?usp=sharing) からダウンロードし、期待されるディレクトリ構造のまま `exp/checkpoints/` 以下に配置してください。
+
+`easy_load_model(...)` はチェックポイントファイルがローカルに存在する前提で動作します。必要なファイルがない場合、モデル読み込み時に `FileNotFoundError` が発生します。
+
 ## 使用方法
 
 ### 基本的な音声分離

@@ -43,6 +43,12 @@ pip install -e .
 > If the project includes a `.devcontainer` directory and `devcontainer.json`, those settings are used.
 > For details, see the [Dev Containers documentation](https://containers.dev/).
 
+### Model Checkpoints
+
+Model checkpoint files (`*.ckpt`) are not managed by Git or Git LFS. Download them from [Google Drive](https://drive.google.com/drive/folders/12w0h0uoFzvY5XtnSYQktm6f19UUnjuTc?usp=sharing) and place them under `exp/checkpoints/` with the expected directory structure.
+
+`easy_load_model(...)` expects the checkpoint files to already exist locally. If a required file is missing, model loading raises `FileNotFoundError`.
+
 ## Usage
 
 ### Basic Audio Separation
