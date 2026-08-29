@@ -1,0 +1,89 @@
+diff --git a/DeFTMamba.py b/DeFTMamba.py
+index f637582..b9f5c9e 100644
+--- a/DeFTMamba.py
++++ b/DeFTMamba.py
+@@ -16,14 +16,21 @@ from einops.layers.torch import Rearrange
+
+ from functools import partial
+ from mamba_ssm.modules.mamba_simple import Mamba
+-from models.arch.mamba_ssm.modules.block import Block
++from mamba_ssm.modules.block import Block
+ from mamba_ssm.modules.mamba2_simple import Mamba2Simple
+ from mamba_ssm.models.mixer_seq_simple import _init_weights
+ from mamba_ssm.ops.triton.layer_norm import RMSNorm
+-from flash_attn import flash_attn_qkvpacked_func, flash_attn_func*
++from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+ import loralib as lora
+
+
++class FullSequenceMamba2Simple(Mamba2Simple):
++    def forward(self, u, inference_params=None, **kwargs):
++        if inference_params is not None:
++            raise ValueError("The published DeFT-Mamba path only supports full sequences")
++        return super().forward(u, **kwargs)
++
++
+ class DeFTMamba(nn.Module):
+     def __init__(self, audio_mode, class_mode, onoff_mode, n_srcs=4, n_mics=4, n_cls=2, n_layers=4, att_dim=64, hidden_dim=256, n_head=4, emb_dim=64, emb_ks=4, emb_hs=1, dropout=0.1, eps=1.0e-5, use_lora=False, freezed_modelues=Optional[str]):
+         super().__init__()
+@@ -124,7 +131,7 @@ class BiMamba(nn.Module):
+             self.forward_blocks.append(
+                 Block(
+                     in_channels,
+-                    mixer_cls=partial(Mamba2Simple, layer_idx=i, d_state=16, d_conv=4, expand=4, headdim=16),
++                    mixer_cls=partial(FullSequenceMamba2Simple, layer_idx=i, d_state=16, d_conv=4, expand=4, headdim=16),
+                     norm_cls=partial(RMSNorm, eps=1e-5),
+                     mlp_cls=nn.Identity,
+                     fused_add_norm=False,
+@@ -136,7 +143,7 @@ class BiMamba(nn.Module):
+                 self.backward_blocks.append(
+                         Block(
+                         in_channels,
+-                        mixer_cls=partial(Mamba2Simple, layer_idx=i, d_state=16, d_conv=4, expand=4, headdim=16),
++                        mixer_cls=partial(FullSequenceMamba2Simple, layer_idx=i, d_state=16, d_conv=4, expand=4, headdim=16),
+                         norm_cls=partial(RMSNorm, eps=1e-5),
+                         mlp_cls=nn.Identity,
+                         fused_add_norm=False,
+@@ -251,7 +258,7 @@ class DeFTANblock(nn.Module):
+
+     def __init__(self, idx, emb_dim, emb_ks, emb_hs, hidden_dim, n_head, dropout, eps, use_lora):
+         super().__init__()
+-        in_channels = emb_dim
++        in_channels = emb_dim * emb_ks
+         # Frequency Module
+         self.intra_norm = LayerNormalization4D(emb_dim, eps)
+         self.intra_inv = GatedConv(in_channels, emb_dim, use_lora=False)
+@@ -281,14 +288,14 @@ class DeFTANblock(nn.Module):
+         intra_rnn = self.intra_norm(input_)  # [B, C, T, Q]
+         intra_rnn = intra_rnn.transpose(1, 2).contiguous().view(B * T, C, Q)  # [BT, C, Q]
+         intra_rnn = F.unfold(intra_rnn [..., None], (self.emb_ks, 1), stride=(self.emb_hs, 1))  # [BT, C*emb_ks, -1]
+-        intra_rnn = self.intra_inv(intra_rnn) + intra_rnn   # [BT, C, -1]
++        intra_rnn = self.intra_inv(intra_rnn)   # [BT, C, -1]
+
+         intra_rnn = intra_rnn.transpose(1, 2)  # [BT, -1, C]
+         intra_rnn = self.intra_att(intra_rnn) + intra_rnn
+         intra_rnn = self.intra_ffw(intra_rnn) + intra_rnn
+         intra_rnn = intra_rnn.transpose(1, 2)  # [BT, H, -1]
+
+-	intra_rnn = self.intra_linear(intra_rnn)  # [BT, C, Q]
++        intra_rnn = self.intra_linear(intra_rnn)  # [BT, C, Q]
+         intra_rnn = intra_rnn.view([B, T, C, Q])
+         intra_rnn = intra_rnn.transpose(1, 2).contiguous()  # [B, C, T, Q]
+         intra_rnn = intra_rnn + input_  # [B, C, T, Q]
+@@ -298,14 +305,14 @@ class DeFTANblock(nn.Module):
+         inter_rnn = self.inter_norm(inter_rnn)  # [B, C, T, F]
+         inter_rnn = inter_rnn.permute(0, 3, 1, 2).contiguous().view(B * Q, C, T)  # [BF, C, T]
+         inter_rnn = F.unfold(inter_rnn [..., None], (self.emb_ks, 1), stride=(self.emb_hs, 1))  # [BT, C*emb_ks, -1]
+-        inter_rnn = self.inter_inv(inter_rnn) + inter_rnn   # [BF, C, -1]
++        inter_rnn = self.inter_inv(inter_rnn)   # [BF, C, -1]
+
+         inter_rnn = inter_rnn.transpose(1, 2)  # [BF, -1, C]
+         inter_rnn = self.inter_att(inter_rnn) + inter_rnn
+         inter_rnn = self.inter_ffw(inter_rnn) + inter_rnn
+         inter_rnn = inter_rnn.transpose(1, 2)  # [BF, H, -1]
+
+-	inter_rnn = self.inter_linear(inter_rnn)  # [BT, C, Q]
++        inter_rnn = self.inter_linear(inter_rnn)  # [BT, C, Q]
+         inter_rnn = inter_rnn.view([B, Q, C, T])
+         inter_rnn = inter_rnn.permute(0, 2, 3, 1).contiguous()  # [B, C, T, Q]
+         inter_rnn = inter_rnn + intra_rnn  # [B, C, T, Q]

@@ -1,0 +1,45 @@
+{
+  "configuration": {
+    "audio_mode": "separation",
+    "class_mode": "unused",
+    "dropout": 0.0,
+    "emb_dim": 64,
+    "emb_hs": 1,
+    "emb_ks": 4,
+    "hidden_dim": 256,
+    "n_head": 4,
+    "n_layers": 1,
+    "n_mics": 2,
+    "n_srcs": 1,
+    "onoff_mode": "unused"
+  },
+  "expected_output_shape": [
+    1,
+    12,
+    10,
+    2
+  ],
+  "forward_backward_seconds": 12.029364488000283,
+  "input_gradient_finite": true,
+  "input_shape": [
+    1,
+    12,
+    10,
+    4
+  ],
+  "output_finite": true,
+  "output_shape": [
+    1,
+    12,
+    10,
+    2
+  ],
+  "parameter_count": 631042,
+  "parameter_gradients_finite": true,
+  "parameter_gradients_present": 84,
+  "patch_status": "already_applied",
+  "peak_allocated_bytes": 323375616,
+  "serialization_max_abs_error": 0.0,
+  "trainable_parameter_count": 631042,
+  "upstream_commit": "34e2c9a59fd4e3b0135b55dac9be3d972602bfd8"
+}

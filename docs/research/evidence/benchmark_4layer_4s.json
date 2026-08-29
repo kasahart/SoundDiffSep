@@ -1,0 +1,52 @@
+{
+  "configuration": {
+    "batch_size": 1,
+    "dtype": "float32",
+    "duration_seconds": 4.0,
+    "emb_dim": 64,
+    "iterations": 3,
+    "n_layers": 4,
+    "n_mics": 2,
+    "n_srcs": 1,
+    "sample_rate": 16000,
+    "warmup": 1
+  },
+  "forward_backward_seconds": [
+    0.12385037800413556,
+    0.12615364100201987,
+    0.12755906098755077
+  ],
+  "forward_backward_seconds_mean": 0.12585435999790207,
+  "forward_seconds": [
+    0.041301819001091644,
+    0.04103542200755328,
+    0.04093765901052393
+  ],
+  "forward_seconds_mean": 0.041091633339722954,
+  "gradient_finite": true,
+  "input_shape": [
+    1,
+    2,
+    64000
+  ],
+  "macs": null,
+  "macs_note": "not measured; no estimate is reported",
+  "output_finite": true,
+  "output_shape": [
+    1,
+    1,
+    64000
+  ],
+  "parameter_count": 2513218,
+  "peak_allocated_vram_bytes": {
+    "forward": 676833280,
+    "forward_backward": 8954999808
+  },
+  "peak_reserved_vram_bytes": {
+    "forward": 784334848,
+    "forward_backward": 9462349824
+  },
+  "real_time_factor": 0.010272908334930738,
+  "steps_per_second": 7.9456921477862945,
+  "trainable_parameter_count": 2513218
+}

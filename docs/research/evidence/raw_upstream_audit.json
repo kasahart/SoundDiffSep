@@ -1,0 +1,41 @@
+{
+  "results": [
+    {
+      "command": [
+        "<runtime-python>",
+        "-m",
+        "py_compile",
+        "DeFTMamba.py"
+      ],
+      "command_redaction": "The interpreter path is normalized; arguments and results are unchanged.",
+      "returncode": 1,
+      "stderr": "  File \"DeFTMamba.py\", line 23\n    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func*\n                                                                     ^\nSyntaxError: invalid syntax\n",
+      "stdout": ""
+    },
+    {
+      "command": [
+        "<runtime-python>",
+        "-c",
+        "import DeFTMamba"
+      ],
+      "command_redaction": "The interpreter path is normalized; arguments and results are unchanged.",
+      "returncode": 1,
+      "stderr": "Traceback (most recent call last):\n  File \"<string>\", line 1, in <module>\n  File \"./DeFTMamba.py\", line 23\n    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func*\n                                                                     ^\nSyntaxError: invalid syntax\n",
+      "stdout": ""
+    },
+    {
+      "command": [
+        "<runtime-python>",
+        "-m",
+        "compileall",
+        "."
+      ],
+      "command_redaction": "The interpreter path is normalized; arguments and results are unchanged.",
+      "returncode": 1,
+      "stderr": "",
+      "stdout": "Listing '.'...\nCompiling './AudioDataset2.py'...\nCompiling './DeFTMamba.py'...\n***   File \"./DeFTMamba.py\", line 23\n    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func*\n                                                                     ^\nSyntaxError: invalid syntax\n\nListing './src'...\nListing './src/audio'...\nListing './src/audio/clip1'...\nListing './src/audio/clip2'...\nListing './src/audio/clip3'...\nListing './src/audio/clip4'...\nListing './src/fig'...\nListing './src/fig/clip1'...\nListing './src/fig/clip2'...\nListing './src/fig/clip3'...\nListing './src/fig/clip4'...\n"
+    }
+  ],
+  "source": "unmodified git archive",
+  "upstream_commit": "34e2c9a59fd4e3b0135b55dac9be3d972602bfd8"
+}
