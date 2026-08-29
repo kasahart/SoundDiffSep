@@ -179,3 +179,13 @@ data/
 exp/
 tests/
 test*.py
+
+# Tracked DeFT-Mamba regression/reference tests.
+!tests/
+tests/*
+!tests/models/
+tests/models/*
+!tests/models/deftmamba/
+tests/models/deftmamba/*
+!tests/models/deftmamba/test*.py
+!tests/models/deftmamba/conftest.py

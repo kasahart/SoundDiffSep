@@ -140,6 +140,38 @@ The source placed at [3,3] is enhanced from the recording captured by the microp
 
 ### Model Architectures
 
+#### Experimental DeFT-Mamba baseline
+
+An optional, CUDA-only 2-microphone/1-source direct-RI DeFT-Mamba baseline is
+available as `deftmamba_official_2ch_1src`. It is constructed through its
+dedicated experimental factory; the existing checkpoint-oriented
+`easy_load_model` defaults are unchanged.
+
+```python
+import yaml
+import torch
+
+from sounddiffsep.models.deftmamba import create_deftmamba_waveform_model
+
+with open("configs/deftmamba/official_2ch_1src_16k.yaml") as stream:
+    config = yaml.safe_load(stream)
+
+model = create_deftmamba_waveform_model(
+    model_config=config["model"],
+    audio_config=config["audio"],
+).cuda()
+# model(torch.randn(batch, 2, samples, device="cuda")) -> [batch, 1, samples]
+```
+
+The model needs ABI-compatible Mamba2, causal-conv1d, and FlashAttention CUDA
+packages. Install the declared optional dependencies with
+`pip install -e '.[deftmamba,dev]'` only in a compatible CUDA build environment;
+prebuilt wheels are specific to the Python, PyTorch, and CUDA combination.
+See the
+[reproduction report](docs/research/deftmamba_2ch_1src_reproduction.md) and
+[upstream audit](docs/research/deftmamba_upstream_audit.md) for the license
+boundary, runtime patch, tensor convention, and measured limitations.
+
 #### Supported Models
 
 - **ResUNet**: U-Net structure with residual connections

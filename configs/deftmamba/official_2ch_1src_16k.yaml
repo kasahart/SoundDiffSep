@@ -1,0 +1,25 @@
+model:
+  name: deftmamba_official_2ch_1src
+  n_mics: 2
+  n_srcs: 1
+  n_layers: 4
+  emb_dim: 64
+  n_heads: 4
+  emb_kernel_size: 4
+  emb_hop_size: 1
+  hidden_dim: 256
+  dropout: 0.1
+  eps: 1.0e-5
+
+audio:
+  sample_rate: 16000
+  duration_seconds: 4
+  n_fft: 512
+  win_length: 512
+  hop_length: 256
+  window: hamming
+  # Reproduction convention; the fixed upstream does not publish RI packing code.
+  ri_packing: channel_major_interleaved
+  center: true
+  periodic: true
+  normalized: false
