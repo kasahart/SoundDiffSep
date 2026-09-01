@@ -21,6 +21,15 @@ class DummyCore(nn.Module):
         return packed[..., :2]
 
 
+class ProjectionCore(nn.Module):
+    def __init__(self) -> None:
+        super().__init__()
+        self.output_projection = nn.Conv2d(64, 2, kernel_size=3, padding=1)
+
+    def forward(self, packed: torch.Tensor) -> torch.Tensor:
+        return packed.new_zeros((*packed.shape[:3], 2))
+
+
 def test_package_import_does_not_load_optional_cuda_dependencies() -> None:
     code = """
 import sys
@@ -120,6 +129,125 @@ def test_factory_rejects_unvalidated_ri_packing_before_constructing_core(
         )
 
 
+def test_complex_mask_factory_initializes_only_output_head(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    direct_core = ProjectionCore()
+    direct_core.output_projection.weight.data.fill_(0.25)
+    direct_core.output_projection.bias.data.fill_(0.5)
+    monkeypatch.setattr(
+        deftmamba, "create_official_2ch_1src_core", lambda **_: direct_core
+    )
+
+    direct = deftmamba.create_deftmamba_waveform_model(
+        deftmamba.DEFTMAMBA_OFFICIAL_2CH_1SRC
+    )
+
+    assert isinstance(direct, deftmamba.DeFTMambaWaveformWrapper)
+    torch.testing.assert_close(
+        direct_core.output_projection.weight,
+        torch.full_like(direct_core.output_projection.weight, 0.25),
+    )
+    torch.testing.assert_close(
+        direct_core.output_projection.bias,
+        torch.full_like(direct_core.output_projection.bias, 0.5),
+    )
+
+    mask_core = ProjectionCore()
+    mask_core.output_projection.weight.data.fill_(0.25)
+    mask_core.output_projection.bias.data.fill_(0.5)
+    monkeypatch.setattr(
+        deftmamba, "create_official_2ch_1src_core", lambda **_: mask_core
+    )
+    masked = deftmamba.create_deftmamba_waveform_model(
+        deftmamba.DEFTMAMBA_COMPLEX_MASK_2CH_1SRC,
+        mask_config={
+            "parameterization": "bounded_cartesian",
+            "reference_channel": 0,
+            "component_bound": 2.0,
+            "head_init_std": 1.0e-3,
+            "identity_initialization": True,
+        },
+        model_contract={
+            "output_mode": "complex_mask",
+            "mask_parameterization": "bounded_cartesian",
+            "reference_channel": 0,
+            "component_bound": 2.0,
+            "contract_version": 1,
+        },
+    )
+
+    assert isinstance(masked, deftmamba.DeFTMambaComplexMaskWaveformWrapper)
+    assert mask_core.output_projection.weight.std().item() == pytest.approx(
+        1.0e-3, rel=0.1
+    )
+    torch.testing.assert_close(
+        mask_core.output_projection.bias,
+        torch.zeros_like(mask_core.output_projection.bias),
+    )
+    assert masked.model_contract["output_mode"] == "complex_mask"
+
+
+def test_complex_mask_factory_rejects_contract_mismatch_before_core(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_if_called(**settings: object) -> DummyCore:
+        raise AssertionError(f"core should not be constructed: {settings}")
+
+    monkeypatch.setattr(
+        deftmamba, "create_official_2ch_1src_core", fail_if_called
+    )
+
+    with pytest.raises(ValueError, match="model_contract does not match"):
+        deftmamba.create_deftmamba_waveform_model(
+            deftmamba.DEFTMAMBA_COMPLEX_MASK_2CH_1SRC,
+            mask_config={"component_bound": 2.0},
+            model_contract={
+                "output_mode": "direct_ri",
+                "mask_parameterization": "bounded_cartesian",
+                "reference_channel": 0,
+                "component_bound": 2.0,
+                "contract_version": 1,
+            },
+        )
+
+
+def test_complex_mask_factory_rejects_reference_channel_before_core(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fail_if_called(**settings: object) -> DummyCore:
+        raise AssertionError(f"core should not be constructed: {settings}")
+
+    monkeypatch.setattr(
+        deftmamba, "create_official_2ch_1src_core", fail_if_called
+    )
+
+    with pytest.raises(ValueError, match="reference_channel must be in"):
+        deftmamba.create_deftmamba_waveform_model(
+            deftmamba.DEFTMAMBA_COMPLEX_MASK_2CH_1SRC,
+            model_config={"n_mics": 2, "n_srcs": 1},
+            mask_config={"reference_channel": 2},
+        )
+
+
+@pytest.mark.parametrize("head_init_std", [0.0, -1.0e-3, float("nan")])
+def test_complex_mask_factory_rejects_invalid_head_std_before_core(
+    monkeypatch: pytest.MonkeyPatch, head_init_std: float
+) -> None:
+    def fail_if_called(**settings: object) -> DummyCore:
+        raise AssertionError(f"core should not be constructed: {settings}")
+
+    monkeypatch.setattr(
+        deftmamba, "create_official_2ch_1src_core", fail_if_called
+    )
+
+    with pytest.raises(ValueError, match="head_init_std must be finite"):
+        deftmamba.create_deftmamba_waveform_model(
+            deftmamba.DEFTMAMBA_COMPLEX_MASK_2CH_1SRC,
+            mask_config={"head_init_std": head_init_std},
+        )
+
+
 def test_provided_yaml_configs_are_complete_and_differ_only_in_depth() -> None:
     with (CONFIG_DIR / "official_2ch_1src_16k.yaml").open() as stream:
         official = yaml.safe_load(stream)
@@ -148,6 +276,27 @@ def test_provided_yaml_configs_are_complete_and_differ_only_in_depth() -> None:
 
     paper_depth["model"]["n_layers"] = 4
     assert paper_depth == official
+
+
+def test_complex_mask_yaml_declares_parameterization_and_contract() -> None:
+    with (CONFIG_DIR / "complex_mask_2ch_1src_16k.yaml").open() as stream:
+        config = yaml.safe_load(stream)
+
+    assert config["model"]["name"] == deftmamba.DEFTMAMBA_COMPLEX_MASK_2CH_1SRC
+    assert config["mask"] == {
+        "parameterization": "bounded_cartesian",
+        "reference_channel": 0,
+        "component_bound": 2.0,
+        "head_init_std": 0.001,
+        "identity_initialization": True,
+    }
+    assert config["model_contract"] == {
+        "output_mode": "complex_mask",
+        "mask_parameterization": "bounded_cartesian",
+        "reference_channel": 0,
+        "component_bound": 2.0,
+        "contract_version": 1,
+    }
 
 
 def test_two_channel_system_batch_stack_contract() -> None:
