@@ -105,3 +105,14 @@ def test_unpack_rejects_invalid_input(
 ) -> None:
     with pytest.raises(exception, match=message):
         unpack_complex_spectrogram(value, n_channels=n_channels)
+
+
+def test_unpack_bfloat16_output_as_complex64() -> None:
+    packed = torch.randn(2, 5, 3, 2).to(torch.bfloat16)
+
+    spectrogram = unpack_complex_spectrogram(packed, n_channels=1)
+
+    assert spectrogram.dtype == torch.complex64
+    torch.testing.assert_close(
+        spectrogram, unpack_complex_spectrogram(packed.float(), n_channels=1)
+    )

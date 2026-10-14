@@ -105,6 +105,9 @@ def unpack_complex_spectrogram(
         channels=n_channels, frequencies=frequencies, frames=frames
     )
     components = packed.reshape(batch, frequencies, frames, n_channels, 2)
+    if components.dtype == torch.bfloat16:
+        # torch.complex has no bfloat16 kernel (BF16 autocast).
+        components = components.float()
     spectrogram = torch.complex(components[..., 0], components[..., 1])
     return spectrogram.permute(0, 3, 1, 2).contiguous()
 
