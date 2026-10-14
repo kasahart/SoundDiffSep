@@ -153,3 +153,13 @@ def test_centered_forward_accepts_clips_up_to_half_a_window(samples: int) -> Non
 
     assert estimate.shape == (2, 1, samples)
     torch.testing.assert_close(estimate, waveform[:, :1], rtol=2e-5, atol=2e-6)
+
+
+def test_uncentered_wrapper_rejects_a_window_shorter_than_n_fft() -> None:
+    with pytest.raises(ValueError, match="win_length == n_fft"):
+        DeFTMambaWaveformWrapper(
+            FirstMicrophoneCore(), n_fft=64, win_length=48, hop_length=16, center=False
+        )
+    DeFTMambaWaveformWrapper(
+        FirstMicrophoneCore(), n_fft=64, win_length=48, hop_length=16, center=True
+    )

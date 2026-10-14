@@ -71,6 +71,13 @@ class DeFTMambaWaveformWrapper(nn.Module):
         ):
             if not isinstance(value, bool):
                 raise TypeError(f"{name} must be bool; received {type(value).__name__}")
+        if not center and win_length < n_fft:
+            # torch.stft zero-pads a short window to n_fft; uncentered, the
+            # first samples then get a zero overlap-add envelope (ISTFT NOLA).
+            raise ValueError(
+                "center=False requires win_length == n_fft; "
+                f"received win_length={win_length}, n_fft={n_fft}"
+            )
         if not isinstance(window, str):
             raise TypeError(
                 f"window must be a string; received {type(window).__name__}"
