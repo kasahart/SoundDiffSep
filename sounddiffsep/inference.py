@@ -75,8 +75,9 @@ class Separator:
 
     def _run(self, close, far):
         is_torch = isinstance(close, torch.Tensor)
-        c = close.detach().cpu().numpy() if is_torch else np.asarray(close)
-        f = far.detach().cpu().numpy() if isinstance(far, torch.Tensor) else np.asarray(far)
+        # float() on the torch side: NumPy has no bfloat16.
+        c = close.detach().float().cpu().numpy() if is_torch else np.asarray(close)
+        f = far.detach().float().cpu().numpy() if isinstance(far, torch.Tensor) else np.asarray(far)
         c, f = c.astype(np.float32, copy=False), f.astype(np.float32, copy=False)
         one = c.ndim == 1
         if one:

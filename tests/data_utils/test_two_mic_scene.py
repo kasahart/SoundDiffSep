@@ -108,3 +108,24 @@ def test_noise_counts_must_match():
         make_scene(s, n, target_far=s, noises_far=n[:1])
     with pytest.raises(ValueError, match="one value per noise"):
         make_scene(s, n, noise_ratio_db=[3.0])
+
+
+def test_margin_must_leave_output_samples():
+    s, n, _ = sources(8, n=100)
+    with pytest.raises(ValueError, match="no output samples"):
+        make_scene(s, n, d0_mode="margin", margin=50)
+
+
+def test_levels_are_exact_for_quiet_images():
+    s, n, rng = sources(9)
+    k = 1e-7  # energies around 1e-10, comparable to a fixed epsilon
+    sc = make_scene(k * s, k * n, target_far=k * s, noises_far=k * rng.standard_normal(n.shape),
+                    dl_db=0.0, snr_db=5.0, noise_ratio_db=[2.0, -3.0])
+    assert db(sc["target_close"], sc["target_far"]) == pytest.approx(0.0, abs=1e-9)
+    assert db(sc["target_close"], sc["noise_close"]) == pytest.approx(5.0, abs=1e-9)
+
+
+def test_zero_energy_image_is_rejected():
+    s, n, _ = sources(10)
+    with pytest.raises(ValueError, match="zero-energy"):
+        make_scene(s, n, target_far=np.zeros_like(s), noises_far=n, dl_db=0.0)

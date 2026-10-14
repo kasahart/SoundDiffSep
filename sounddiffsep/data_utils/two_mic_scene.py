@@ -52,6 +52,13 @@ def _energy(x: np.ndarray) -> float:
     return float(np.sum(x * x))
 
 
+def _level_gain(reference: float, energy: float, ratio_db: float, what: str) -> float:
+    """Gain g with ``reference / (g^2 energy) = 10^(ratio_db/10)``; exact for any nonzero energy."""
+    if energy == 0.0:
+        raise ValueError(f"cannot set the level of a zero-energy {what}")
+    return math.sqrt(reference / (energy * 10 ** (ratio_db / 10)))
+
+
 def cross_path(x: np.ndarray, delay: int = 0, fir=None) -> np.ndarray:
     """``x`` through ``[0] * delay + fir`` (fir defaults to [1]), truncated to ``len(x)``."""
     h = np.concatenate([np.zeros(int(delay)), np.atleast_1d(np.asarray(fir if fir is not None else [1.0], float))])
@@ -81,7 +88,7 @@ def tilt(x: np.ndarray, db_per_oct: float, sample_rate: int = 16000) -> np.ndarr
 def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, snr_db=None,
                noise_ratio_db=None, target_delay=0, target_fir=None, noise_delays=None, noise_firs=None,
                d0=0, d0_mode="circular", margin=0, far_gain_db=0.0, far_tilt_db_per_oct=0.0,
-               norm="none", peak=0.9, sample_rate=16000, eps=1e-12) -> dict:
+               norm="none", peak=0.9, sample_rate=16000) -> dict:
     """Build one scene; see the module docstring.  ``noises``: ``[K, L]`` (K >= 1)."""
     if d0_mode not in D0_MODES:
         raise ValueError(f"d0_mode must be one of {D0_MODES}")
@@ -111,6 +118,8 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
         if abs(d0) > m:
             raise ValueError(f"|d0| = {abs(d0)} exceeds margin {m}")
         length = t_c.shape[-1] - 2 * m
+        if length <= 0:
+            raise ValueError(f"margin {m} leaves no output samples of {t_c.shape[-1]}")
         close_win = lambda x: x[..., m:m + length]  # noqa: E731
         far_win = lambda x: x[..., m - d0:m - d0 + length]  # noqa: E731
     elif d0_mode == "circular":
@@ -127,11 +136,11 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
             raise ValueError(f"noise_ratio_db needs one value per noise ({k}), got {r.shape[0]}")
         n_c = n_c.copy()  # may alias the caller's array
         for i in range(k):
-            n_c[i] = n_c[i] * math.sqrt(_energy(n_f[i]) * 10 ** (r[i] / 10) / (_energy(n_c[i]) + eps))
-    g_t = 1.0 if dl_db is None else math.sqrt(_energy(t_c) / (_energy(t_f) * 10 ** (dl_db / 10) + eps))
+            n_c[i] = n_c[i] * _level_gain(_energy(n_f[i]), _energy(n_c[i]), -r[i], f"close image of noise {i}")
+    g_t = 1.0 if dl_db is None else _level_gain(_energy(t_c), _energy(t_f), dl_db, "far target image")
     t_f = g_t * t_f
     nc, nf = n_c.sum(0), n_f.sum(0)
-    a = 1.0 if snr_db is None else math.sqrt(_energy(t_c) / (_energy(nc) * 10 ** (snr_db / 10) + eps))
+    a = 1.0 if snr_db is None else _level_gain(_energy(t_c), _energy(nc), snr_db, "close noise sum")
     nc, nf = a * nc, a * nf
 
     def far_mic(x):

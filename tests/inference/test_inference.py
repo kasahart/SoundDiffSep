@@ -106,3 +106,12 @@ def test_deftmamba_rejects_nonzero_reference_channel(monkeypatch):
         inference._build("unused.pt", cfg, "cpu")
     net.reference_channel = 0
     assert inference._build("unused.pt", cfg, "cpu") is net
+
+
+def test_bfloat16_torch_inputs():
+    close, far = pair()
+    sep = make("close_peak")
+    c16, f16 = torch.from_numpy(close).bfloat16(), torch.from_numpy(far).bfloat16()
+    st, nt = sep.separate(c16, f16)
+    expected, _ = sep.separate(c16.float().numpy(), f16.float().numpy())
+    assert st.dtype == torch.float32 and torch.equal(st, torch.from_numpy(expected))
