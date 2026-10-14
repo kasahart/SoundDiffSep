@@ -74,9 +74,9 @@ class Separator:
         return self.cfg["input_order"][0] == "far"
 
     def _run(self, close, far):
-        is_torch = isinstance(close, torch.Tensor)
+        device = close.device if isinstance(close, torch.Tensor) else None
         # float() on the torch side: NumPy has no bfloat16.
-        c = close.detach().float().cpu().numpy() if is_torch else np.asarray(close)
+        c = close.detach().float().cpu().numpy() if device is not None else np.asarray(close)
         f = far.detach().float().cpu().numpy() if isinstance(far, torch.Tensor) else np.asarray(far)
         c, f = c.astype(np.float32, copy=False), f.astype(np.float32, copy=False)
         one = c.ndim == 1
@@ -97,26 +97,26 @@ class Separator:
         else:
             y = out * (1.0 / g).astype(np.float32)
         y = y.astype(np.float32)
-        return y, c, (lambda a: a[0] if one else a), is_torch
+        return y, c, (lambda a: a[0] if one else a), device
 
     def separate(self, close, far):
-        """close, far: [T] or [B, T] (numpy or torch). Returns float32 ``(s_hat, n_hat)``, same kind as ``close``."""
+        """close, far: [T] or [B, T] (numpy or torch). Returns float32 ``(s_hat, n_hat)``, same kind and device as ``close``."""
         if self.swapped:
             raise ValueError("input_order ['far', 'close'] outputs the far-channel image; use far_image()")
-        s, c, squeeze, is_torch = self._run(close, far)
+        s, c, squeeze, device = self._run(close, far)
         n = (c - s).astype(np.float32)
         s, n = squeeze(s), squeeze(n)
-        if is_torch:
-            return torch.from_numpy(s), torch.from_numpy(n)
+        if device is not None:
+            return torch.from_numpy(s).to(device), torch.from_numpy(n).to(device)
         return s, n
 
     def far_image(self, close, far):
         """Swapped order only: the model output at the original far level (production: far-noise N_f)."""
         if not self.swapped:
             raise ValueError("far_image() needs input_order ['far', 'close']")
-        y, _, squeeze, is_torch = self._run(close, far)
+        y, _, squeeze, device = self._run(close, far)
         y = squeeze(y)
-        return torch.from_numpy(y) if is_torch else y
+        return torch.from_numpy(y).to(device) if device is not None else y
 
 
 def _strip(state: dict, prefix: str) -> dict:

@@ -115,3 +115,15 @@ def test_bfloat16_torch_inputs():
     st, nt = sep.separate(c16, f16)
     expected, _ = sep.separate(c16.float().numpy(), f16.float().numpy())
     assert st.dtype == torch.float32 and torch.equal(st, torch.from_numpy(expected))
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a CUDA device")
+def test_torch_results_stay_on_the_input_device():
+    close, far = pair()
+    sep = make("close_peak", order=("far", "close"))
+    c, f = torch.from_numpy(close).cuda(), torch.from_numpy(far).cuda()
+    y = sep.far_image(c, f)
+    assert y.device == f.device
+    _ = f - y  # documented residual expression
+    s, n = make("close_peak").separate(c, f)
+    assert s.device == n.device == c.device

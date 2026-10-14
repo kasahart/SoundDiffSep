@@ -127,5 +127,11 @@ def test_levels_are_exact_for_quiet_images():
 
 def test_zero_energy_image_is_rejected():
     s, n, _ = sources(10)
-    with pytest.raises(ValueError, match="zero-energy"):
+    with pytest.raises(ValueError, match="zero energy"):
         make_scene(s, n, target_far=np.zeros_like(s), noises_far=n, dl_db=0.0)
+
+
+def test_zero_energy_reference_is_rejected():
+    s, n, _ = sources(11)
+    with pytest.raises(ValueError, match="zero energy"):
+        make_scene(np.zeros_like(s), n, target_far=s, noises_far=n, dl_db=0.0)

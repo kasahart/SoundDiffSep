@@ -54,8 +54,8 @@ def _energy(x: np.ndarray) -> float:
 
 def _level_gain(reference: float, energy: float, ratio_db: float, what: str) -> float:
     """Gain g with ``reference / (g^2 energy) = 10^(ratio_db/10)``; exact for any nonzero energy."""
-    if energy == 0.0:
-        raise ValueError(f"cannot set the level of a zero-energy {what}")
+    if energy == 0.0 or reference == 0.0:
+        raise ValueError(f"cannot set a level ratio for {what}: an image has zero energy")
     return math.sqrt(reference / (energy * 10 ** (ratio_db / 10)))
 
 
