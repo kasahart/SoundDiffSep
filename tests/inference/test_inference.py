@@ -92,3 +92,17 @@ def test_resunet30_io_shape():
     s, n = sep.separate(close, far)
     assert s.shape == (2, 16000) and np.isfinite(s).all()
     np.testing.assert_allclose(s + n, close, atol=1e-6)
+
+
+def test_deftmamba_rejects_nonzero_reference_channel(monkeypatch):
+    import sounddiffsep.inference as inference
+    import sounddiffsep.models.deftmamba.checkpoint as checkpoint
+
+    net = torch.nn.Identity()
+    net.reference_channel = 1
+    monkeypatch.setattr(checkpoint, "load_relative_mixture_checkpoint", lambda path, device: (net, {}))
+    cfg = {"model": "deftmamba", "input_order": ["close", "far"], "norm": {"type": "none"}}
+    with pytest.raises(ValueError, match="reference_channel=1"):
+        inference._build("unused.pt", cfg, "cpu")
+    net.reference_channel = 0
+    assert inference._build("unused.pt", cfg, "cpu") is net

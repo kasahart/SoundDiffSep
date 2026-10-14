@@ -124,3 +124,19 @@ def test_wrapper_reports_wrong_core_output_shape() -> None:
 def test_wrapper_rejects_unsupported_window() -> None:
     with pytest.raises(ValueError, match="only 'hamming'"):
         make_wrapper(FirstMicrophoneCore(), window="hann")
+
+
+@pytest.mark.parametrize("samples", [40, 64, 95, 511])
+def test_uncentered_forward_keeps_the_trailing_partial_frame(samples: int) -> None:
+    generator = torch.Generator().manual_seed(23)
+    waveform = torch.randn(2, 2, samples, generator=generator)
+    wrapper = make_wrapper(FirstMicrophoneCore(), center=False, periodic=True)
+
+    with torch.no_grad():
+        estimate = wrapper(waveform)
+
+    assert estimate.shape == (2, 1, samples)
+    # Only the first half-window is under-covered without centering.
+    torch.testing.assert_close(
+        estimate[..., 32:], waveform[:, :1, 32:], rtol=2e-5, atol=2e-6
+    )

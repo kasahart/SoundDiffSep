@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from typing import Final
 
 import torch
@@ -106,6 +107,12 @@ class DeFTMambaWaveformWrapper(nn.Module):
         _validate_waveform(waveform)
         batch, channels, samples = waveform.shape
         flattened = waveform.reshape(batch * channels, samples)
+        if not self.center:
+            # Without centering, torch.stft drops a trailing partial frame;
+            # zero-pad so every input sample is analysed (ISTFT crops back).
+            frames = max(0, math.ceil((samples - self.n_fft) / self.hop_length))
+            padded = self.n_fft + frames * self.hop_length
+            flattened = torch.nn.functional.pad(flattened, (0, padded - samples))
         window = self._window_for(flattened)
         spectrogram = torch.stft(
             flattened,

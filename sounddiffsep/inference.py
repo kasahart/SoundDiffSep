@@ -15,7 +15,8 @@ Sidecar ``<ckpt>.preprocess.json`` (or pass the same dict as ``cfg=``)::
 
 Conventions (docs/inference.md):
   * ch0 = close (near the machine), ch1 = far.  All models output the image of their target at the
-    FIRST model-input channel; ResUNet30 applies its mask to that channel.
+    FIRST model-input channel; ResUNet30 applies its mask to that channel (DeFT-Mamba complex-mask
+    checkpoints with reference_channel != 0 are rejected).
   * input_order ["close", "far"] is the designed use: ``separate`` returns ``(s_hat, n_hat)`` with
     ``n_hat = close - s_hat``.
   * input_order ["far", "close"] (production DeFT-Mamba swap) makes the output the image at the FAR
@@ -139,6 +140,12 @@ def _build(ckpt_path, cfg: dict, device) -> torch.nn.Module:
         if schema != RELATIVE_MIXTURE_SCHEMA:
             raise ValueError(f"unsupported DeFT-Mamba checkpoint schema {schema!r}")
         net, _ = load_relative_mixture_checkpoint(ckpt_path, "cpu")
+        if getattr(net, "reference_channel", 0) != 0:
+            # The gain restore and n_hat = close - s_hat assume the image at the first input channel.
+            raise ValueError(
+                f"complex-mask reference_channel={net.reference_channel} is not supported; "
+                "the separator convention needs the image at the first model-input channel"
+            )
     else:  # dcunet
         from .model_loader import _load_dcunet
 
