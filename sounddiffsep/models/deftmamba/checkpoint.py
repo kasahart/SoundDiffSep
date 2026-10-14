@@ -19,10 +19,27 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
 
 RELATIVE_MIXTURE_SCHEMA = "relative_mixture_training_v1"
 _PREFIXES = ("ss_model._orig_mod.", "ss_model.")
+
+
+# Trainer checkpoints also carry numpy arrays (RNG state); allow only those beyond the torch defaults.
+_NUMPY_SAFE_GLOBALS = [
+    np._core.multiarray._reconstruct,
+    np.ndarray,
+    np.dtype,
+    *(getattr(np.dtypes, name) for name in dir(np.dtypes) if name.endswith("DType")),
+]
+
+
+def load_weights_only(path: str | Path) -> Any:
+    """``torch.load`` with the restricted (``weights_only=True``) unpickler, numpy arrays allowed."""
+
+    with torch.serialization.safe_globals(_NUMPY_SAFE_GLOBALS):
+        return torch.load(str(path), map_location="cpu", weights_only=True)
 
 
 def wrapper_state_dict(state: Mapping[str, Any]) -> dict[str, Any]:
@@ -66,7 +83,7 @@ def load_relative_mixture_checkpoint(
     schema, global step and the training config.  Parameters are frozen.
     """
 
-    checkpoint = torch.load(str(path), map_location="cpu", weights_only=False)
+    checkpoint = load_weights_only(path)
     if not isinstance(checkpoint, Mapping):
         raise ValueError("checkpoint must be a mapping")
     schema = str(checkpoint.get("schema"))

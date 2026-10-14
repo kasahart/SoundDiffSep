@@ -102,6 +102,8 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
         n_f = np.atleast_2d(np.asarray(noises_far, dtype=np.float64))
     if not (t_c.shape == t_f.shape == n_c.shape[1:] == n_f.shape[1:]):
         raise ValueError("all images must have the same length")
+    if not (k >= 1 and n_f.shape[0] == k):
+        raise ValueError(f"noises and noises_far must hold the same K >= 1 sources, got {k} and {n_f.shape[0]}")
 
     # output window
     if d0_mode == "margin":
@@ -121,6 +123,8 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
 
     if noise_ratio_db is not None:
         r = np.asarray(noise_ratio_db, dtype=np.float64).reshape(-1)
+        if r.shape[0] != k:
+            raise ValueError(f"noise_ratio_db needs one value per noise ({k}), got {r.shape[0]}")
         n_c = n_c.copy()  # may alias the caller's array
         for i in range(k):
             n_c[i] = n_c[i] * math.sqrt(_energy(n_f[i]) * 10 ** (r[i] / 10) / (_energy(n_c[i]) + eps))

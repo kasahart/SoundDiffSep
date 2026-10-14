@@ -100,3 +100,11 @@ def test_noise_ratio_does_not_modify_caller_images():
     np.testing.assert_array_equal(n, before)
     b = make_scene(s, n, target_far=s_far, noises_far=n_far, noise_ratio_db=[3.0, -2.0], snr_db=0)
     np.testing.assert_array_equal(a["close"], b["close"])
+
+
+def test_noise_counts_must_match():
+    s, n, rng = sources(7)
+    with pytest.raises(ValueError, match="same K"):
+        make_scene(s, n, target_far=s, noises_far=n[:1])
+    with pytest.raises(ValueError, match="one value per noise"):
+        make_scene(s, n, noise_ratio_db=[3.0])

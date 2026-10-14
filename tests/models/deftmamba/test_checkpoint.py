@@ -79,3 +79,26 @@ def test_build_from_config_forwards_mask_sections(monkeypatch, extra) -> None:
     assert seen["mask_config"] == extra.get("mask")
     assert seen["model_contract"] == extra.get("model_contract")
     assert "model_type" not in seen["model_config"]
+
+
+class _NotAllowed:
+    pass
+
+
+def test_load_weights_only_allows_numpy_but_not_arbitrary_objects(tmp_path) -> None:
+    import pickle
+
+    import numpy as np
+
+    from sounddiffsep.models.deftmamba.checkpoint import load_weights_only
+
+    ok = tmp_path / "ok.pt"
+    torch.save({"w": torch.ones(2), "rng": np.arange(3, dtype=np.uint32), "step": 4}, ok)
+    loaded = load_weights_only(ok)
+    np.testing.assert_array_equal(loaded["rng"], np.arange(3, dtype=np.uint32))
+    assert torch.equal(loaded["w"], torch.ones(2)) and loaded["step"] == 4
+
+    bad = tmp_path / "bad.pt"
+    torch.save({"obj": _NotAllowed()}, bad)
+    with pytest.raises(pickle.UnpicklingError):
+        load_weights_only(bad)

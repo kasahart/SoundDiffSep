@@ -140,3 +140,16 @@ def test_uncentered_forward_keeps_the_trailing_partial_frame(samples: int) -> No
     torch.testing.assert_close(
         estimate[..., 32:], waveform[:, :1, 32:], rtol=2e-5, atol=2e-6
     )
+
+
+@pytest.mark.parametrize("samples", [1, 20, 32, 33])
+def test_centered_forward_accepts_clips_up_to_half_a_window(samples: int) -> None:
+    generator = torch.Generator().manual_seed(29)
+    waveform = torch.randn(2, 2, samples, generator=generator)
+    wrapper = make_wrapper(FirstMicrophoneCore(), center=True, periodic=True)
+
+    with torch.no_grad():
+        estimate = wrapper(waveform)
+
+    assert estimate.shape == (2, 1, samples)
+    torch.testing.assert_close(estimate, waveform[:, :1], rtol=2e-5, atol=2e-6)

@@ -92,6 +92,9 @@ class BoundedCartesianComplexMask(nn.Module):
                 torch.zeros_like(mask_real),
             )
             mask_real = mask_real + identity_correction
+        if mask_real.dtype not in (torch.float16, torch.float32, torch.float64):
+            # torch.complex has no bfloat16 kernel (BF16 autocast).
+            mask_real, mask_imag = mask_real.float(), mask_imag.float()
         return torch.complex(mask_real, mask_imag)
 
     def saturation_rate(self, raw_mask: torch.Tensor) -> torch.Tensor:

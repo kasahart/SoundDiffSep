@@ -348,3 +348,14 @@ def test_real_deftmamba_mask_one_batch_overfit_has_finite_gradients(
     assert final_loss < initial_loss * 0.8
     assert wrapper.last_mask_saturation_rate is not None
     assert bool(torch.isfinite(wrapper.last_mask_saturation_rate))
+
+
+def test_bfloat16_logits_build_a_float32_complex_mask() -> None:
+    parameterization = BoundedCartesianComplexMask(component_bound=2.0)
+    raw = torch.randn(2, 5, 3, 2).to(torch.bfloat16)
+
+    mask = parameterization(raw)
+
+    assert mask.dtype == torch.complex64
+    expected = parameterization(raw.float())
+    torch.testing.assert_close(mask, expected, rtol=1e-2, atol=1e-2)

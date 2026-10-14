@@ -113,6 +113,12 @@ class DeFTMambaWaveformWrapper(nn.Module):
             frames = max(0, math.ceil((samples - self.n_fft) / self.hop_length))
             padded = self.n_fft + frames * self.hop_length
             flattened = torch.nn.functional.pad(flattened, (0, padded - samples))
+        elif samples <= self.n_fft // 2:
+            # Reflection padding needs more than n_fft // 2 samples; zero-pad
+            # short clips (ISTFT crops back to the input length).
+            flattened = torch.nn.functional.pad(
+                flattened, (0, self.n_fft // 2 + 1 - samples)
+            )
         window = self._window_for(flattened)
         spectrogram = torch.stft(
             flattened,

@@ -161,8 +161,9 @@ def main() -> None:
         "forward_backward_peak_allocated_bytes": forward_backward_peak_allocated,
         "forward_backward_peak_reserved_bytes": forward_backward_peak_reserved,
         "note": (
-            "The released attention keeps dropout active in eval mode; an identical "
-            "CUDA RNG seed is replayed for the serialization comparison."
+            "Attention dropout is disabled in eval mode, so repeated eval outputs are "
+            "deterministic; the CUDA RNG seed is still replayed for the serialization "
+            "comparison so results stay comparable with earlier evidence."
         ),
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True)

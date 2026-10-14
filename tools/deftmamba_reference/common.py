@@ -64,6 +64,13 @@ def prepare_checkout(checkout: Path = DEFAULT_CHECKOUT) -> Path:
 def apply_minimal_patch(checkout: Path) -> str:
     """Apply the tracked GPL-target patch, or report that it is already applied."""
 
+    if not MINIMAL_PATCH.is_file():
+        raise FileNotFoundError(
+            f"{MINIMAL_PATCH} is not distributed with this repository (it contains "
+            "GPL-2.0 code). Recreate the six runtime fixes listed in "
+            "docs/research/deftmamba_upstream_audit.md as that patch file, then rerun."
+        )
+
     check = subprocess.run(
         ("git", "apply", "--check", str(MINIMAL_PATCH)),
         cwd=checkout,

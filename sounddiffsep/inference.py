@@ -130,7 +130,9 @@ def _build(ckpt_path, cfg: dict, device) -> torch.nn.Module:
         from .models.resunet.resunet_unconditional import ResUNet30_Unconditional
 
         net = ResUNet30_Unconditional(input_channels=2, output_channels=1)
-        payload = torch.load(str(ckpt_path), map_location="cpu", weights_only=False)
+        from .models.deftmamba.checkpoint import load_weights_only
+
+        payload = load_weights_only(ckpt_path)
         state = payload["state_dict"] if "state_dict" in payload else payload
         net.load_state_dict(_strip(dict(state), "ss_model."), strict=True)
     elif kind == "deftmamba":
