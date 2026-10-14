@@ -179,3 +179,11 @@ data/
 exp/
 tests/
 test*.py
+
+# Tracked shared-library tests.
+!tests/
+tests/*
+!tests/inference/
+!tests/inference/*.py
+!tests/data_utils/
+!tests/data_utils/*.py

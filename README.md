@@ -90,6 +90,20 @@ def process_long_audio(mixed, noise_clean, model, batch_size=32):
     pass
 ```
 
+### Two-Microphone Inference with a Preprocessing Sidecar
+
+```python
+from sounddiffsep.inference import load
+
+sep = load("separator.pt", "cuda:0")      # reads separator.pt.preprocess.json
+s_hat, n_hat = sep.separate(close, far)   # original level, n_hat = close - s_hat
+```
+
+The sidecar states the channel order and peak normalization the checkpoint was
+trained with; see [docs/inference.md](docs/inference.md).
+`sounddiffsep.data_utils.two_mic_scene.make_scene` builds close/far training
+scenes with exact leakage, SNR and inter-channel offset.
+
 ## Quick Experiments and Evaluation
 
 ### Notebooks
