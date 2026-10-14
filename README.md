@@ -167,10 +167,9 @@ The model needs ABI-compatible Mamba2, causal-conv1d, and FlashAttention CUDA
 packages. Install the declared optional dependencies with
 `pip install -e '.[deftmamba,dev]'` only in a compatible CUDA build environment;
 prebuilt wheels are specific to the Python, PyTorch, and CUDA combination.
-See the
-[reproduction report](docs/research/deftmamba_2ch_1src_reproduction.md) and
-[upstream audit](docs/research/deftmamba_upstream_audit.md) for the license
-boundary, runtime patch, tensor convention, and measured limitations.
+This is an independent implementation of
+[DeFT-Mamba](https://github.com/donghoney0416/DeFTMamba) (GPL-2.0); no upstream
+source code is included.
 
 #### Supported Models
 

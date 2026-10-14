@@ -76,7 +76,6 @@ Issues = "https://github.com/kasahart/SoundDiffSep/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sounddiffsep*"]
-exclude = ["sounddiffsep_lab*"]
 
 
 [tool.black]
@@ -99,6 +98,5 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 markers = [
-    "deftmamba_reference: compares the independent implementation with the patched external GPL reference",
     "cuda: requires a CUDA device and the optional DeFT-Mamba CUDA dependencies",
 ]

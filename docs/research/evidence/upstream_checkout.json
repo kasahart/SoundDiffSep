@@ -1,6 +1,0 @@
-{
-  "actual_commit": "34e2c9a59fd4e3b0135b55dac9be3d972602bfd8",
-  "checkout": ".cache/upstream/DeFTMamba",
-  "expected_commit": "34e2c9a59fd4e3b0135b55dac9be3d972602bfd8",
-  "minimal_patch": "not_requested"
-}

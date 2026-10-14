@@ -180,7 +180,7 @@ exp/
 tests/
 test*.py
 
-# Tracked DeFT-Mamba regression/reference tests.
+# Tracked DeFT-Mamba tests.
 !tests/
 tests/*
 !tests/models/

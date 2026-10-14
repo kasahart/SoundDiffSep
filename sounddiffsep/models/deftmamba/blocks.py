@@ -131,8 +131,7 @@ class UpstreamFlashSelfAttention(nn.Module):
             key,
             value,
             # FlashAttention applies dropout_p regardless of module mode, so
-            # gate it on self.training (the released code did not; see
-            # docs/research/deftmamba_upstream_audit.md).
+            # gate it on self.training (the released code did not).
             dropout_p=self.dropout_probability if self.training else 0.0,
         )
         flattened = attended.reshape(batch, steps, self.heads * self.width)
