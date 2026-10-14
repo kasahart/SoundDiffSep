@@ -32,7 +32,7 @@ MIMO・4-source・可変 source 数、PIT、classification、source counting、S
 GPL-2.0 の upstream source は SoundDiffSep package へコピーしていない。
 reference runner は無視対象の `.cache/upstream/DeFTMamba` に固定 commit を取得し、
 GPL source にだけ
-[`minimal_runtime_fixes.patch`](../../third_party_patches/deftmamba/minimal_runtime_fixes.patch)
+`minimal_runtime_fixes.patch`（GPL-2.0 のコード片を含むため、このリポジトリでは配布しない。内容は upstream の構文・import・形状の 6 点の実行上の修正で、表は監査文書を参照）
 を適用する。この外部実行物を **`upstream_minfix`** と呼び、「正しい公式モデル」
 とは呼ばない。raw runner は cache の patch 状態によらず固定 commit の
 `git archive` を一時展開するため、無修正 source を監査できる。

@@ -41,7 +41,7 @@ SoundDiffSep 側で採用する 2 microphone / 1 source 契約を混同しない
 
 upstream は SoundDiffSep package 内へ vendor しない。`.cache/upstream/DeFTMamba`
 の外部 checkout と、GPL-2.0 コードへ適用する
-[`minimal_runtime_fixes.patch`](../../third_party_patches/deftmamba/minimal_runtime_fixes.patch)
+`minimal_runtime_fixes.patch`（GPL-2.0 のコード片を含むため、このリポジトリでは配布しない。内容は upstream の構文・import・形状の 6 点の実行上の修正で、表は監査文書を参照）
 を使う。SoundDiffSep 側の実装は別に記述された独立実装であり、MIT license を
 GPL へ変更しない。
 

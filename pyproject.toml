@@ -76,6 +76,7 @@ Issues = "https://github.com/kasahart/SoundDiffSep/issues"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["sounddiffsep*"]
+exclude = ["sounddiffsep_lab*"]
 
 
 [tool.black]

@@ -9,27 +9,27 @@ Signal model (all images are on the same sample grid of length T)::
     far   = EQ( shift_D0( g_t * t_f + a * sum_k n_fk ) )
 
 Images.  Either pass per-mic images (``target_far`` / ``noises_far``; ``target`` / ``noises`` are then
-the close images, e.g. RIR convolutions as in the NA-BEATs mixer), or pass dry waveforms and let the
+the close images, e.g. RIR convolutions), or pass dry waveforms and let the
 generator build the far image of the target and the close image of each noise as
 ``delay + optional short FIR`` of the dry signal (the e2c benchmark v2 model: each source reaches the
 OTHER microphone through ``[0]*delay + fir``).
 
 Levels (each measured as energy over the output window, so they are hit exactly):
   * ``dl_db``: target leakage, ``E(t_c) / E(g_t t_f) = 10^(dl/10)`` (the far target image is rescaled,
-    as in the S2b mixer).  Negative values = target louder at far.  ``None`` keeps the given level.
+    as in a far-image rescaling mixer).  Negative values = target louder at far.  ``None`` keeps the given level.
   * ``noise_ratio_db[k]``: per-noise ``E(close_k) / E(far_k)`` (the close image is rescaled; ``None``
     keeps the given level).
   * ``snr_db``: ``E(t_c) / E(a * sum n_ck)`` at the close mic; one noise gain ``a`` is shared by both mics.
 
 Inter-channel offset ``d0`` (samples, ``far[t] = far_unshifted[t - d0]``, d0 > 0 delays far), mode:
   * ``"circular"``: ``np.roll`` of the far images (no zeros; a wrap splice at the edge).  With dry
-    sources this matches the S2b mixer's circular padding except near the splice.
+    sources this matches circular padding of the sources except near the splice.
   * ``"zero"``: zero-filled shift (e2c benchmark v2; leaves |d0| zeros at one edge).
   * ``"margin"``: inputs are ``T + 2 * margin`` long; close uses ``[margin, margin + T)`` and far uses
     ``[margin - d0, margin - d0 + T)`` (no zeros, no splice; needs ``|d0| <= margin``).
 
 Far microphone type (optional, after the offset): ``far_gain_db`` and ``far_tilt_db_per_oct`` (zero-phase
-tilt around 1 kHz, as in the NA-BEATs mixer).  These change the observed close/far ratios of every source,
+tilt around 1 kHz).  These change the observed close/far ratios of every source,
 so ``dl_db`` and ``noise_ratio_db`` refer to the levels before them.
 
 Output normalization: ``norm`` / ``peak`` are the modes of :mod:`sounddiffsep.normalization`; the close
@@ -69,7 +69,7 @@ def shift(x: np.ndarray, d: int) -> np.ndarray:
 
 
 def tilt(x: np.ndarray, db_per_oct: float, sample_rate: int = 16000) -> np.ndarray:
-    """Zero-phase spectral tilt around 1 kHz (NA-BEATs mixer curve, clipped to +-12 dB)."""
+    """Zero-phase spectral tilt around 1 kHz (clipped to +-12 dB)."""
     n_fft = 1 << (2 * len(x) - 1).bit_length()
     f = np.fft.rfftfreq(n_fft, 1.0 / sample_rate)
     curve = np.clip(db_per_oct * (np.log2(np.maximum(f, 20.0)) - math.log2(1000.0)), -12.0, 12.0)

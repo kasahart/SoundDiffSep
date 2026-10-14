@@ -1,7 +1,7 @@
 """Two-microphone separator inference with the preprocessing stated next to the checkpoint.
 
     from sounddiffsep.inference import load
-    sep = load("s2b-update-003000.pt", "cuda:0")          # reads s2b-update-003000.pt.preprocess.json
+    sep = load("separator.pt", "cuda:0")          # reads separator.pt.preprocess.json
     s_hat, n_hat = sep.separate(close, far)                # original level, n_hat = close - s_hat
 
 Sidecar ``<ckpt>.preprocess.json`` (or pass the same dict as ``cfg=``)::

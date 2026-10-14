@@ -12,6 +12,8 @@ UPSTREAM_URL = "https://github.com/donghoney0416/DeFTMamba.git"
 UPSTREAM_COMMIT = "34e2c9a59fd4e3b0135b55dac9be3d972602bfd8"
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CHECKOUT = REPOSITORY_ROOT / ".cache" / "upstream" / "DeFTMamba"
+# The GPL-2.0 runtime-fix patch is not distributed in this repository (it contains
+# excerpts of the upstream GPL source). Place it here to use --apply-minfix.
 MINIMAL_PATCH = (
     REPOSITORY_ROOT
     / "third_party_patches"

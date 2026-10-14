@@ -12,7 +12,7 @@ independent_peak     g_close = p / peak(close), g_far = p / peak(far) DeFT-Mamba
                      (a channel with peak 0 keeps g = 1)            original SoundDiffSep models
 common_close_anchor  g = p / (peak(close) + 1e-12), both channels   DeFT-Mamba production worker (0.9)
 joint_peak           g = p / max(peak(close), peak(far), 1e-8)      ResUNet30 2chssDNN init (0.9)
-close_peak           g = p / max(peak(close), 1e-8), both channels  S2 / S2b fine-tunes (0.5)
+close_peak           g = p / max(peak(close), 1e-8), both channels  ResUNet30 fine-tuned with close-peak U(0.1, 0.9) training (0.5)
 none                 g = 1
 ==================== ============================================== =====================================
 

@@ -42,7 +42,7 @@ s_hat, n_hat = sep.separate(close, far)     # 元のレベル、n_hat = close - 
 | `independent_peak` | チャンネルごとに peak → p | DeFT-Mamba の学習（p = 0.9）、旧 SoundDiffSep モデル |
 | `common_close_anchor` | close の peak → p、同じ係数を両 ch に | DeFT-Mamba 本番 worker（p = 0.9） |
 | `joint_peak` | max(peak(close), peak(far)) → p | ResUNet30 初期値 sep_init_step10000（p = 0.9） |
-| `close_peak` | close の peak → p、同じ係数を両 ch に | S2 / S2b 微調整（学習は close peak U(0.1, 0.9)、推論は p = 0.5） |
+| `close_peak` | close の peak → p、同じ係数を両 ch に | close peak で学習した微調整版（学習は close peak U(0.1, 0.9)、推論は p = 0.5） |
 | `none` | 1 | — |
 
 WLS-F などで加工した close を入れるが、ゲインは生 close から取りたい場合は、自分でスケールして
@@ -54,11 +54,9 @@ WLS-F などで加工した close を入れるが、ゲインは生 close から
 DeFT-Mamba の attention は以前 `eval()` でも dropout が掛かっていた（FlashAttention に
 `dropout_p` をそのまま渡していた）。現在は `self.training` のときだけ渡す。
 
-## 4. 再現の確認（2026-10-14）
+## 4. 再現の確認
 
-- ResUNet30 S2b（`s2b-update-003000.pt`、`close_peak 0.5`）：Dev 7 機種 × train 先頭 5 本で
-  `audio/s2b_raw_n` と max|diff| 5.3e-7、`_lib/separate.py` とは完全一致。
-- DeFT-Mamba step333000（`["far", "close"]`、`common_close_anchor 0.9`）：本番 worker の
-  モデル呼び出し（attention dropout 0）と、`tf32: true` で完全一致、`tf32: false`（FP32）では
-  max|diff| 2e-4 程度。本番 worker は学習スクリプトの import で
-  `torch.set_float32_matmul_precision("high")` が効いた状態で動いている。
+- ResUNet30（`close_peak 0.5`）：既存の推論スクリプトの出力と max|diff| 5.3e-7（float32 の丸め程度）。
+- DeFT-Mamba（relative_mixture_training_v1、`["far", "close"]`、`common_close_anchor 0.9`）：別実装の推論 worker と
+  `tf32: true` で完全一致、`tf32: false`（FP32）では max|diff| 2e-4 程度。参照側の worker は
+  `torch.set_float32_matmul_precision("high")` が効いた状態で動いていたため、`tf32` キーで合わせられるようにしている。
