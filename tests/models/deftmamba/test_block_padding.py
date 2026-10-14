@@ -28,11 +28,14 @@ def _block(window_size: int, hop_size: int) -> DeFTMambaBlock:
 
 
 @pytest.mark.parametrize("hop_size", [1, 2, 3])
-def test_block_returns_input_grid_when_hop_pads(hop_size: int) -> None:
+@pytest.mark.parametrize("frames", [1, 3, 11])
+def test_block_returns_input_grid_when_hop_pads(hop_size: int, frames: int) -> None:
     block = _block(window_size=4, hop_size=hop_size)
-    features = torch.randn(2, 8, 11, 257)
+    features = torch.randn(2, 8, frames, 257)
     output = block(features)
     assert output.shape == features.shape
     torch.testing.assert_close(output, (features + 1.0) + 1.0, rtol=0, atol=0)
-    if hop_size > 1:
-        assert block.frequency_path.shapes[0] != features.shape
+    padded = block.frequency_path.shapes[0]
+    assert padded[2] >= 4 and padded[3] >= 257
+    if hop_size > 1 or frames < 4:
+        assert padded != features.shape

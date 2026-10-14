@@ -355,10 +355,8 @@ class DeFTMambaBlock(nn.Module):
         self.hop_size = hop_size
 
     def _padded_length(self, length: int) -> int:
-        if length < self.window_size:
-            raise ValueError(
-                f"axis length {length} must be >= emb_kernel_size {self.window_size}"
-            )
+        # Axes shorter than the kernel (short clips) are zero-padded to one window.
+        length = max(length, self.window_size)
         return (
             math.ceil((length - self.window_size) / self.hop_size) * self.hop_size
             + self.window_size

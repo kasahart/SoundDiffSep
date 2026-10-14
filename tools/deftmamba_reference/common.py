@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import tempfile
 from pathlib import Path
 from typing import Sequence
 
@@ -80,6 +82,7 @@ def apply_minimal_patch(checkout: Path) -> str:
     )
     if check.returncode == 0:
         run_checked(("git", "apply", str(MINIMAL_PATCH)), checkout)
+        verify_only_minimal_patch(checkout)
         return "applied"
 
     reverse = subprocess.run(
@@ -90,11 +93,40 @@ def apply_minimal_patch(checkout: Path) -> str:
         stderr=subprocess.PIPE,
     )
     if reverse.returncode == 0:
+        verify_only_minimal_patch(checkout)
         return "already_applied"
     raise RuntimeError(
         "minimal patch does not apply cleanly\n"
         f"forward check:\n{check.stderr}\nreverse check:\n{reverse.stderr}"
     )
+
+
+def _write_tree(checkout: Path, *steps: Sequence[str]) -> str:
+    """Tree id after ``git read-tree HEAD`` plus ``steps`` on a throwaway index."""
+
+    with tempfile.TemporaryDirectory() as scratch:
+        env = {**os.environ, "GIT_INDEX_FILE": str(Path(scratch) / "index")}
+        for arguments in (("git", "read-tree", "HEAD"), *steps):
+            subprocess.run(list(arguments), cwd=checkout, env=env, check=True,
+                           text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.run(("git", "write-tree"), cwd=checkout, env=env, check=True,
+                              text=True, stdout=subprocess.PIPE).stdout.strip()
+
+
+def verify_only_minimal_patch(checkout: Path) -> None:
+    """Fail unless the checkout is the pinned commit plus exactly the minimal patch."""
+
+    expected = _write_tree(checkout, ("git", "apply", "--cached", str(MINIMAL_PATCH)))
+    actual = _write_tree(checkout, ("git", "add", "-u"))
+    untracked = run_checked(
+        ("git", "ls-files", "--others", "--exclude-standard", "--", "*.py"), checkout
+    ).stdout.split()
+    if expected != actual or untracked:
+        changed = run_checked(("git", "diff", "--name-only", expected, actual), checkout).stdout.split()
+        raise RuntimeError(
+            f"upstream checkout at {checkout} has changes beyond the minimal patch "
+            f"(modified: {changed}, untracked .py: {untracked}); use a clean cache path"
+        )
 
 
 def write_json(payload: object, output: Path | None) -> None:
