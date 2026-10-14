@@ -61,6 +61,8 @@ def cross_path(x: np.ndarray, delay: int = 0, fir=None) -> np.ndarray:
 def shift(x: np.ndarray, d: int) -> np.ndarray:
     """Zero-filled delay by ``d`` samples (d < 0 advances)."""
     y = np.zeros_like(x)
+    if abs(d) >= len(x):
+        return y
     if d >= 0:
         y[d:] = x[: len(x) - d]
     else:
@@ -119,6 +121,7 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
 
     if noise_ratio_db is not None:
         r = np.asarray(noise_ratio_db, dtype=np.float64).reshape(-1)
+        n_c = n_c.copy()  # may alias the caller's array
         for i in range(k):
             n_c[i] = n_c[i] * math.sqrt(_energy(n_f[i]) * 10 ** (r[i] / 10) / (_energy(n_c[i]) + eps))
     g_t = 1.0 if dl_db is None else math.sqrt(_energy(t_c) / (_energy(t_f) * 10 ** (dl_db / 10) + eps))

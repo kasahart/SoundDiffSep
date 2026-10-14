@@ -385,8 +385,10 @@ class DeFTMambaBlock(nn.Module):
             trace=trace,
             trace_prefix=f"{trace_prefix}.frequency",
         )
-        return self.time_path(
+        features = self.time_path(
             features,
             trace=trace,
             trace_prefix=f"{trace_prefix}.time",
         )
+        # emb_hop_size > 1 can pad either axis; return the input grid.
+        return features[:, :, :original_time, :original_frequency]

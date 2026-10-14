@@ -66,3 +66,16 @@ def test_roundtrip_relative_mixture_checkpoint(
         expected, actual = model(x), loaded(x)
     assert actual.shape == (2, 1, 4000)
     torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+
+@pytest.mark.parametrize("extra", [{}, {"mask": {"reference_channel": 1},
+                                       "model_contract": {"reference_channel": 1}}])
+def test_build_from_config_forwards_mask_sections(monkeypatch, extra) -> None:
+    import sounddiffsep.models.deftmamba as deftmamba
+
+    seen = {}
+    monkeypatch.setattr(deftmamba, "create_deftmamba_waveform_model", lambda **kw: seen.update(kw))
+    build_from_config({**CONFIG, **extra})
+    assert seen["mask_config"] == extra.get("mask")
+    assert seen["model_contract"] == extra.get("model_contract")
+    assert "model_type" not in seen["model_config"]

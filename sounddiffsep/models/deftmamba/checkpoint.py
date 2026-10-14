@@ -8,7 +8,8 @@ when the model was ``torch.compile``-d).
 
 The wrapper is rebuilt exactly as the trainer's ``build_system`` does:
 ``create_deftmamba_waveform_model(model_type, model_config=config["model"] minus
-"model_type", audio_config=config["audio"])``; the prefix is stripped and the
+"model_type", audio_config=config["audio"])`` plus ``mask`` / ``model_contract`` when
+present (complex-mask models); the prefix is stripped and the
 state dict is loaded with ``strict=True``.  The trainer itself is not imported.
 """
 
@@ -51,6 +52,8 @@ def build_from_config(config: Mapping[str, Any]) -> torch.nn.Module:
         model_name=model_type,
         model_config=model_conf,
         audio_config=dict(config["audio"]),
+        mask_config=config.get("mask"),
+        model_contract=config.get("model_contract"),
     )
 
 

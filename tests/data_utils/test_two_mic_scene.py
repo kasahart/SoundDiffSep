@@ -83,3 +83,20 @@ def test_zero_mode_shift_leaves_zeros():
     sc = make_scene(s, n, d0=100, d0_mode="zero")
     assert np.all(sc["far"][:100] == 0)
     np.testing.assert_allclose(sc["noise_far"], shift(n.sum(0), 100))
+
+
+@pytest.mark.parametrize("d", [T, T + 1, -T, -(T + 7)])
+def test_shift_beyond_length_is_silence(d):
+    x = np.arange(1.0, T + 1)
+    assert np.all(shift(x, d) == 0)
+
+
+def test_noise_ratio_does_not_modify_caller_images():
+    s, n, rng = sources(6)
+    n_far = rng.standard_normal(n.shape)
+    s_far = rng.standard_normal(T)
+    before = n.copy()
+    a = make_scene(s, n, target_far=s_far, noises_far=n_far, noise_ratio_db=[3.0, -2.0], snr_db=0)
+    np.testing.assert_array_equal(n, before)
+    b = make_scene(s, n, target_far=s_far, noises_far=n_far, noise_ratio_db=[3.0, -2.0], snr_db=0)
+    np.testing.assert_array_equal(a["close"], b["close"])
