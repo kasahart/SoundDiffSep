@@ -11,7 +11,7 @@ Signal model (all images are on the same sample grid of length T)::
 Images.  Either pass per-mic images (``target_far`` / ``noises_far``; ``target`` / ``noises`` are then
 the close images, e.g. RIR convolutions), or pass dry waveforms and let the
 generator build the far image of the target and the close image of each noise as
-``delay + optional short FIR`` of the dry signal (the e2c benchmark v2 model: each source reaches the
+``delay + optional short FIR`` of the dry signal (each source reaches the
 OTHER microphone through ``[0]*delay + fir``).
 
 Levels (each measured as energy over the output window, so they are hit exactly):
@@ -24,7 +24,7 @@ Levels (each measured as energy over the output window, so they are hit exactly)
 Inter-channel offset ``d0`` (samples, ``far[t] = far_unshifted[t - d0]``, d0 > 0 delays far), mode:
   * ``"circular"``: ``np.roll`` of the far images (no zeros; a wrap splice at the edge).  With dry
     sources this matches circular padding of the sources except near the splice.
-  * ``"zero"``: zero-filled shift (e2c benchmark v2; leaves |d0| zeros at one edge).
+  * ``"zero"``: zero-filled shift (leaves |d0| zeros at one edge).
   * ``"margin"``: inputs are ``T + 2 * margin`` long; close uses ``[margin, margin + T)`` and far uses
     ``[margin - d0, margin - d0 + T)`` (no zeros, no splice; needs ``|d0| <= margin``).
 

@@ -94,18 +94,24 @@ def test_resunet30_io_shape():
     np.testing.assert_allclose(s + n, close, atol=1e-6)
 
 
-def test_deftmamba_rejects_nonzero_reference_channel(monkeypatch):
+def test_register_model_plugs_in_a_builder(monkeypatch):
     import sounddiffsep.inference as inference
-    import sounddiffsep.models.deftmamba.checkpoint as checkpoint
 
-    net = torch.nn.Identity()
-    net.reference_channel = 1
-    monkeypatch.setattr(checkpoint, "load_relative_mixture_checkpoint", lambda path, device: (net, {}))
-    cfg = {"model": "deftmamba", "input_order": ["close", "far"], "norm": {"type": "none"}}
-    with pytest.raises(ValueError, match="reference_channel=1"):
-        inference._build("unused.pt", cfg, "cpu")
-    net.reference_channel = 0
-    assert inference._build("unused.pt", cfg, "cpu") is net
+    class WithDropout(torch.nn.Module):
+        dropout_probability = 0.1
+
+        def forward(self, x):
+            return x[:, :1]
+
+    monkeypatch.setattr(inference, "_BUILDERS", dict(inference._BUILDERS))
+    cfg = {"model": "toy", "input_order": ["close", "far"], "norm": {"type": "none"}}
+    with pytest.raises(ValueError, match="cfg\\['model'\\]"):
+        check_cfg(cfg)
+    seen = {}
+    inference.register_model("toy", lambda path, c: seen.setdefault("args", (path, c)) and WithDropout())
+    net = inference._build("unused.pt", cfg, "cpu")
+    assert seen["args"] == ("unused.pt", cfg)
+    assert not net.training and net.dropout_probability == 0.0
 
 
 def test_bfloat16_torch_inputs():

@@ -180,16 +180,9 @@ exp/
 tests/
 test*.py
 
-# Tracked DeFT-Mamba tests.
+# Tracked shared-library tests.
 !tests/
 tests/*
-!tests/models/
-tests/models/*
-!tests/models/deftmamba/
-tests/models/deftmamba/*
-!tests/models/deftmamba/test*.py
-!tests/models/deftmamba/conftest.py
-# Tracked shared-library tests.
 !tests/inference/
 !tests/inference/*.py
 !tests/data_utils/

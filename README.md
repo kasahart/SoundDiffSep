@@ -90,6 +90,20 @@ def process_long_audio(mixed, noise_clean, model, batch_size=32):
     pass
 ```
 
+### Two-Microphone Inference with a Preprocessing Sidecar
+
+```python
+from sounddiffsep.inference import load
+
+sep = load("separator.pt", "cuda:0")      # reads separator.pt.preprocess.json
+s_hat, n_hat = sep.separate(close, far)   # original level, n_hat = close - s_hat
+```
+
+The sidecar states the channel order and peak normalization the checkpoint was
+trained with; see [docs/inference.md](docs/inference.md).
+`sounddiffsep.data_utils.two_mic_scene.make_scene` builds close/far training
+scenes with exact leakage, SNR and inter-channel offset.
+
 ## Quick Experiments and Evaluation
 
 ### Notebooks
@@ -139,37 +153,6 @@ The source placed at [3,3] is enhanced from the recording captured by the microp
 - **Processing time**: Evaluation of real-time performance
 
 ### Model Architectures
-
-#### Experimental DeFT-Mamba baseline
-
-An optional, CUDA-only 2-microphone/1-source direct-RI DeFT-Mamba baseline is
-available as `deftmamba_official_2ch_1src`. It is constructed through its
-dedicated experimental factory; the existing checkpoint-oriented
-`easy_load_model` defaults are unchanged.
-
-```python
-import yaml
-import torch
-
-from sounddiffsep.models.deftmamba import create_deftmamba_waveform_model
-
-with open("configs/deftmamba/official_2ch_1src_16k.yaml") as stream:
-    config = yaml.safe_load(stream)
-
-model = create_deftmamba_waveform_model(
-    model_config=config["model"],
-    audio_config=config["audio"],
-).cuda()
-# model(torch.randn(batch, 2, samples, device="cuda")) -> [batch, 1, samples]
-```
-
-The model needs ABI-compatible Mamba2, causal-conv1d, and FlashAttention CUDA
-packages. Install the declared optional dependencies with
-`pip install -e '.[deftmamba,dev]'` only in a compatible CUDA build environment;
-prebuilt wheels are specific to the Python, PyTorch, and CUDA combination.
-This is an independent implementation of
-[DeFT-Mamba](https://github.com/donghoney0416/DeFTMamba) (GPL-2.0); no upstream
-source code is included.
 
 #### Supported Models
 

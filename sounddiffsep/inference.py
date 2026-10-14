@@ -6,41 +6,41 @@
 
 Sidecar ``<ckpt>.preprocess.json`` (or pass the same dict as ``cfg=``)::
 
-    {"model": "resunet30" | "deftmamba" | "dcunet",
-     "input_order": ["close", "far"],                     # or ["far", "close"] (production DeFT swap)
+    {"model": "resunet30" | "dcunet" | <registered name>,
+     "input_order": ["close", "far"],                     # or ["far", "close"] (swapped)
      "norm": {"type": "close_peak", "peak": 0.5},         # see sounddiffsep.normalization
-     "checkpoint_schema": "relative_mixture_training_v1", # deftmamba only (the only schema supported)
      "config": "<yaml>",                                   # dcunet only (training config)
      "tf32": false}                                        # optional; true = TF32 matmul/cuDNN (process-global)
 
+Other architectures plug in with ``register_model(name, builder)``; ``builder(ckpt_path, cfg)`` returns
+the network on CPU.
+
 Conventions (docs/inference.md):
   * ch0 = close (near the machine), ch1 = far.  All models output the image of their target at the
-    FIRST model-input channel; ResUNet30 applies its mask to that channel (DeFT-Mamba complex-mask
-    checkpoints with reference_channel != 0 are rejected).
+    FIRST model-input channel; ResUNet30 applies its mask to that channel.
   * input_order ["close", "far"] is the designed use: ``separate`` returns ``(s_hat, n_hat)`` with
     ``n_hat = close - s_hat``.
-  * input_order ["far", "close"] (production DeFT-Mamba swap) makes the output the image at the FAR
-    microphone of the source dominant there (the far-noise estimate N_f).  ``separate`` refuses this
-    order; use ``far_image(close, far)`` (and ``far - far_image`` if a residual is wanted).
+  * input_order ["far", "close"] (swapped) makes the output the image at the FAR microphone of the
+    source dominant there (a far-noise estimate).  ``separate`` refuses this order; use
+    ``far_image(close, far)`` (and ``far - far_image`` if a residual is wanted).
   * Gains come from the inputs passed in (pass the RAW pair), are applied per channel and undone on the
-    output with the gain of the first model-input channel.  Dropout is off (eval(), and attention
-    ``dropout_probability`` set to 0 for DeFT-Mamba).
+    output with the gain of the first model-input channel.  Dropout is off (eval(), and any module
+    ``dropout_probability`` set to 0).
 """
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import numpy as np
 import torch
 
 from .normalization import NORM_TYPES, peak_gains
 
-MODELS = ("resunet30", "deftmamba", "dcunet")
-# Modes taken from 2chssDNN-side scripts divide by the float32 gain; modes taken from the DeFT worker
-# multiply by float32(1 / gain).  Kept apart so both references are reproduced bit for bit.
+# Some reference pipelines divide by the float32 gain, others multiply by float32(1 / gain).  Kept
+# apart so both references are reproduced bit for bit.
 _RESTORE_BY_DIVISION = ("close_peak", "joint_peak", "none")
 
 
@@ -52,8 +52,8 @@ def read_sidecar(ckpt_path) -> dict:
 
 
 def check_cfg(cfg: dict) -> dict:
-    if cfg.get("model") not in MODELS:
-        raise ValueError(f"cfg['model'] must be one of {MODELS}, got {cfg.get('model')!r}")
+    if cfg.get("model") not in _BUILDERS:
+        raise ValueError(f"cfg['model'] must be one of {sorted(_BUILDERS)}, got {cfg.get('model')!r}")
     order = list(cfg.get("input_order", ()))
     if sorted(order) != ["close", "far"]:
         raise ValueError(f"input_order must be a permutation of ['close', 'far'], got {order}")
@@ -111,7 +111,7 @@ class Separator:
         return s, n
 
     def far_image(self, close, far):
-        """Swapped order only: the model output at the original far level (production: far-noise N_f)."""
+        """Swapped order only: the model output at the original far level (e.g. a far-noise estimate)."""
         if not self.swapped:
             raise ValueError("far_image() needs input_order ['far', 'close']")
         y, _, squeeze, device = self._run(close, far)
@@ -125,34 +125,35 @@ def _strip(state: dict, prefix: str) -> dict:
     return state
 
 
+def _build_resunet30(ckpt_path, cfg: dict) -> torch.nn.Module:
+    from .models.resunet.resunet_unconditional import ResUNet30_Unconditional
+
+    net = ResUNet30_Unconditional(input_channels=2, output_channels=1)
+    payload = torch.load(str(ckpt_path), map_location="cpu", weights_only=True)
+    state = payload["state_dict"] if "state_dict" in payload else payload
+    net.load_state_dict(_strip(dict(state), "ss_model."), strict=True)
+    return net
+
+
+def _build_dcunet(ckpt_path, cfg: dict) -> torch.nn.Module:
+    from .model_loader import _load_dcunet
+
+    return _load_dcunet(cfg["config"], str(ckpt_path), "cpu")
+
+
+_BUILDERS: dict[str, Callable[[Any, dict], torch.nn.Module]] = {
+    "resunet30": _build_resunet30,
+    "dcunet": _build_dcunet,
+}
+
+
+def register_model(name: str, builder: Callable[[Any, dict], torch.nn.Module]) -> None:
+    """Make ``cfg["model"] == name`` load with ``builder(ckpt_path, cfg)`` (network on CPU)."""
+    _BUILDERS[name] = builder
+
+
 def _build(ckpt_path, cfg: dict, device) -> torch.nn.Module:
-    kind = cfg["model"]
-    if kind == "resunet30":
-        from .models.resunet.resunet_unconditional import ResUNet30_Unconditional
-
-        net = ResUNet30_Unconditional(input_channels=2, output_channels=1)
-        from .models.deftmamba.checkpoint import load_weights_only
-
-        payload = load_weights_only(ckpt_path)
-        state = payload["state_dict"] if "state_dict" in payload else payload
-        net.load_state_dict(_strip(dict(state), "ss_model."), strict=True)
-    elif kind == "deftmamba":
-        from .models.deftmamba.checkpoint import RELATIVE_MIXTURE_SCHEMA, load_relative_mixture_checkpoint
-
-        schema = cfg.get("checkpoint_schema", RELATIVE_MIXTURE_SCHEMA)
-        if schema != RELATIVE_MIXTURE_SCHEMA:
-            raise ValueError(f"unsupported DeFT-Mamba checkpoint schema {schema!r}")
-        net, _ = load_relative_mixture_checkpoint(ckpt_path, "cpu")
-        if getattr(net, "reference_channel", 0) != 0:
-            # The gain restore and n_hat = close - s_hat assume the image at the first input channel.
-            raise ValueError(
-                f"complex-mask reference_channel={net.reference_channel} is not supported; "
-                "the separator convention needs the image at the first model-input channel"
-            )
-    else:  # dcunet
-        from .model_loader import _load_dcunet
-
-        net = _load_dcunet(cfg["config"], str(ckpt_path), "cpu")
+    net = _BUILDERS[cfg["model"]](ckpt_path, cfg)
     net = net.to(device).eval()
     for module in net.modules():
         if hasattr(module, "dropout_probability"):
@@ -164,7 +165,7 @@ def _build(ckpt_path, cfg: dict, device) -> torch.nn.Module:
 def load(ckpt_path, device="cuda:0", cfg: dict[str, Any] | None = None) -> Separator:
     """Build a :class:`Separator`; ``cfg`` defaults to the sidecar ``<ckpt>.preprocess.json``."""
     cfg = check_cfg(dict(cfg) if cfg is not None else read_sidecar(ckpt_path))
-    # Process-global.  "tf32": true reproduces the DeFT production worker, whose trainer import sets
+    # Process-global.  "tf32": true matches pipelines that run with
     # torch.set_float32_matmul_precision("high") (TF32 matmuls, ~1e-4 different outputs).
     tf32 = bool(cfg.get("tf32", False))
     torch.set_float32_matmul_precision("high" if tf32 else "highest")
