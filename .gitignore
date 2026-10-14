@@ -189,3 +189,8 @@ tests/models/*
 tests/models/deftmamba/*
 !tests/models/deftmamba/test*.py
 !tests/models/deftmamba/conftest.py
+# Tracked shared-library tests.
+!tests/inference/
+!tests/inference/*.py
+!tests/data_utils/
+!tests/data_utils/*.py
