@@ -94,6 +94,8 @@ def make_scene(target, noises, *, target_far=None, noises_far=None, dl_db=None, 
         raise ValueError(f"d0_mode must be one of {D0_MODES}")
     d0 = int(d0)
     t_c = np.asarray(target, dtype=np.float64)
+    if t_c.ndim != 1:
+        raise ValueError(f"target must be one waveform [T], got shape {t_c.shape}")
     n_c = np.atleast_2d(np.asarray(noises, dtype=np.float64))
     k = n_c.shape[0]
     if target_far is None:

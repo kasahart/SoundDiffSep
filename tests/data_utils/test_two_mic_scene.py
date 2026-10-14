@@ -135,3 +135,9 @@ def test_zero_energy_reference_is_rejected():
     s, n, _ = sources(11)
     with pytest.raises(ValueError, match="zero energy"):
         make_scene(np.zeros_like(s), n, target_far=s, noises_far=n, dl_db=0.0)
+
+
+def test_target_must_be_one_waveform():
+    s, n, _ = sources(12)
+    with pytest.raises(ValueError, match="one waveform"):
+        make_scene(s[None], n)
