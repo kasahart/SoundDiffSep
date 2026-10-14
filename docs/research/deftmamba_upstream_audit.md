@@ -424,6 +424,13 @@ default は 0.1 で、`model.eval()` は plain float の `self.dropout` を変�
 公開挙動を保存する。論文が意図した eval semantics は
 **公開情報から確定できない**ため、最小 patch では修正しない。
 
+**更新（2026-10-14）**：本実装（`sounddiffsep.models.deftmamba.blocks`）では
+`dropout_p=self.dropout_probability if self.training else 0.0` とし、eval 時の
+attention dropout を止めた（FlashAttention の interface 記述どおり）。train 時の
+挙動は変えていない。この変更以前の checkpoint で「公開挙動の eval 出力」を
+再現したい場合は、`model.train()` ではなく旧 commit（3dc1c12 以前）を使うこと。
+上の比較・serialization の記述は変更前の挙動についてのものである。
+
 ### 9.4 Mamba-FFN
 
 論文 Fig.1 は `Bi-Mamba2` を示す。公開 code も default

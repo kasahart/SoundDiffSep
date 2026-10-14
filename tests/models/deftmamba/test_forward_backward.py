@@ -53,18 +53,38 @@ def test_zero_input_remains_finite(deftmamba_cuda_device: torch.device) -> None:
 
 
 @pytest.mark.cuda
-def test_eval_preserves_upstream_attention_dropout_behavior(
+def test_eval_disables_attention_dropout(
     deftmamba_cuda_device: torch.device,
 ) -> None:
+    """eval() output must not depend on the torch RNG state (attention dropout off)."""
     model = make_core(deftmamba_cuda_device, dropout=0.1).eval()
     model_input = torch.randn(1, 8, 8, 4, device=deftmamba_cuda_device)
 
+    outputs = []
     with torch.no_grad():
-        first = model(model_input)
-        second = model(model_input)
+        for seed in (0, 1, 2):
+            torch.manual_seed(seed)
+            torch.cuda.manual_seed_all(seed)
+            outputs.append(model(model_input))
 
-    assert torch.isfinite(first).all() and torch.isfinite(second).all()
-    assert not torch.equal(first, second), (
-        "The released attention passes dropout_p through even in eval mode; "
-        "this test records that preserved behavior rather than correcting it."
-    )
+    assert all(torch.isfinite(output).all() for output in outputs)
+    assert torch.equal(outputs[0], outputs[1]) and torch.equal(outputs[0], outputs[2])
+
+
+@pytest.mark.cuda
+def test_train_mode_keeps_attention_dropout(
+    deftmamba_cuda_device: torch.device,
+) -> None:
+    model = make_core(deftmamba_cuda_device, dropout=0.1).train()
+    model_input = torch.randn(1, 8, 8, 4, device=deftmamba_cuda_device)
+
+    with torch.no_grad():
+        torch.manual_seed(0)
+        first = model(model_input)
+        torch.manual_seed(1)
+        second = model(model_input)
+        torch.manual_seed(0)
+        repeated = model(model_input)
+
+    assert not torch.equal(first, second)
+    assert torch.equal(first, repeated)
