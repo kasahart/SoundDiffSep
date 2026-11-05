@@ -196,7 +196,7 @@ tinycss2==1.4.0
 toml==0.10.2
 tomli==2.2.1
 toolz==1.0.0
-torch==2.5.1
+torch==2.13.0
 torch-optimizer==0.1.0
 torch-stoi==0.2.3
 torchaudio==2.5.1
